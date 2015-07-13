@@ -129,6 +129,14 @@ namespace WebDAVSharp.Server.Stores.DiskStore
             return stream;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public void FinishWriteOperation()
+        {
+            //Do nothing, I'm not interested.
+        }
+
         #endregion
     }
 }

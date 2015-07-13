@@ -84,6 +84,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                     left -= inBuffer;
                 }
             }
+            doc.FinishWriteOperation();
 
             context.SendSimpleResponse((int)HttpStatusCode.Created);
         }

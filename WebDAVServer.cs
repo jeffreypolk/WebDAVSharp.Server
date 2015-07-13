@@ -369,28 +369,28 @@ namespace WebDAVSharp.Server
                 }
                 catch (FileNotFoundException ex)
                 {
-                    _log.Warn(ex.Message);
+                    _log.Warn(ex.Message, ex);
                     throw new WebDavNotFoundException(innerException: ex);
                 }
                 catch (DirectoryNotFoundException ex)
                 {
-                    _log.Warn(ex.Message);
+                    _log.Warn(ex.Message, ex);
                     throw new WebDavNotFoundException(innerException: ex);
                 }
                 catch (NotImplementedException ex)
                 {
-                    _log.Warn(ex.Message);
+                    _log.Warn(ex.Message, ex);
                     throw new WebDavNotImplementedException(innerException: ex);
                 }
                 catch (Exception ex)
                 {
-                    _log.Warn(ex.Message);
+                    _log.Warn(ex.Message, ex);
                     throw new WebDavInternalServerException(innerException: ex);
                 }
             }
             catch (WebDavException ex)
             {
-                _log.Warn(ex.StatusCode + " " + ex.Message);
+                _log.Warn(ex.StatusCode + " " + ex.Message, ex);
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;
                 if (ex.Message != context.Response.StatusDescription)

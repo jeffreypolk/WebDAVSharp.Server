@@ -55,5 +55,10 @@ namespace WebDAVSharp.Server.Stores
         /// The <see cref="Stream" /> object that can be written to.
         /// </returns>
         Stream OpenWriteStream(bool append);
+
+        /// <summary>
+        /// Called when the caller finish writing operation 
+        /// </summary>
+        void FinishWriteOperation();
     }
 }
