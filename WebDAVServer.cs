@@ -32,7 +32,7 @@ namespace WebDAVSharp.Server
         private readonly bool _ownsListener;
         private readonly IWebDavStore _store;
         private readonly Dictionary<string, IWebDavMethodHandler> _methodHandlers;
-        internal readonly static ILog _log = LogManager.GetCurrentClassLogger();
+        internal readonly static ILog _log = LogManager.GetLogger("WebDavServer");
         private readonly object _threadLock = new object();
         private ManualResetEvent _stopEvent;
 
