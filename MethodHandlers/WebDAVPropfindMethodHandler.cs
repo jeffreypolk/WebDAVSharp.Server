@@ -148,6 +148,19 @@ namespace WebDAVSharp.Server.MethodHandlers
             /***************************************************************************************************
              * Send the response
              ***************************************************************************************************/
+            if (WebDavServer.Log.IsDebugEnabled)
+            {
+                WebDavServer.Log.DebugFormat(
+@"Request {0}:{1}:{2}
+Request
+{3}
+Response:
+{4}",
+                context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url,
+                requestDoc.Beautify(), 
+                responseDoc.Beautify());
+            }
+
 
             SendResponse(context, responseDoc);
         }

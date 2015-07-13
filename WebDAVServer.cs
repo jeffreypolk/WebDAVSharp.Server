@@ -345,7 +345,8 @@ namespace WebDAVSharp.Server
 
             Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
 
-            _log.Info(context.Request.HttpMethod + " " + context.Request.RemoteEndPoint + ": " + context.Request.Url);
+            String callInfo = String.Format("{0}:{1}:{2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
+            _log.DebugFormat("CALLED: {0}", callInfo);
             try
             {
                 try
@@ -370,28 +371,28 @@ namespace WebDAVSharp.Server
                 }
                 catch (FileNotFoundException ex)
                 {
-                    _log.Warn(ex.Message, ex);
+                    _log.Warn(callInfo + ": " + ex.Message, ex);
                     throw new WebDavNotFoundException(innerException: ex);
                 }
                 catch (DirectoryNotFoundException ex)
                 {
-                    _log.Warn(ex.Message, ex);
+                    _log.Warn(callInfo + ": " + ex.Message, ex);
                     throw new WebDavNotFoundException(innerException: ex);
                 }
                 catch (NotImplementedException ex)
                 {
-                    _log.Warn(ex.Message, ex);
+                    _log.Warn(callInfo + ": " + ex.Message, ex);
                     throw new WebDavNotImplementedException(innerException: ex);
                 }
                 catch (Exception ex)
                 {
-                    _log.Warn(ex.Message, ex);
+                    _log.Warn(callInfo + ": " + ex.Message, ex);
                     throw new WebDavInternalServerException(innerException: ex);
                 }
             }
             catch (WebDavException ex)
             {
-                _log.Warn(ex.StatusCode + " " + ex.Message, ex);
+                _log.Warn(callInfo + ": " + ex.StatusCode + " " + ex.Message, ex);
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;
                 if (ex.Message != context.Response.StatusDescription)
@@ -407,7 +408,7 @@ namespace WebDAVSharp.Server
             }
             finally
             {
-                _log.Info(context.Response.StatusCode + " " + context.Response.StatusDescription + ": " + context.Request.HttpMethod + " " + context.Request.RemoteEndPoint + ": " + context.Request.Url);
+                _log.Debug(context.Response.StatusCode + " " + context.Response.StatusDescription + ": " + context.Request.HttpMethod + " " + context.Request.RemoteEndPoint + ": " + context.Request.Url);
             }
         }
 

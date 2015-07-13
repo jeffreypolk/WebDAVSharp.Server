@@ -106,7 +106,7 @@ namespace WebDAVSharp.Server.Stores.Locks
             ref string requestedlocktimeout, out string locktoken, XmlDocument requestDocument, int depth)
         {
             CleanLocks(path);
-            WebDavServer.Log.Info("Lock Requested Timeout:" + requestedlocktimeout);
+            WebDavServer.Log.Debug("Lock Requested Timeout:" + requestedlocktimeout);
             locktoken = string.Empty;
             lock (ObjectLocks)
             {
