@@ -7,12 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Xml;
-using Common.Logging;
+
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
 using WebDAVSharp.Server.Stores.Locks;
 using WebDAVSharp.Server.Utilities;
+using log4net;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
@@ -179,7 +180,7 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// A <see cref="List{T}" /> of <see cref="IWebDavStoreItem" />
         /// </returns>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavConflictException"></exception>
-        private static List<IWebDavStoreItem> GetWebDavStoreItems(IWebDavStoreItem iWebDavStoreItem, int depth)
+        private List<IWebDavStoreItem> GetWebDavStoreItems(IWebDavStoreItem iWebDavStoreItem, int depth)
         {
             List<IWebDavStoreItem> list = new List<IWebDavStoreItem>();
 
@@ -193,7 +194,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                     return list;
 
                 foreach (IWebDavStoreItem item in collection.Items.Where(item => !list.Contains(item)))
-                    list.Add(item);
+                        list.Add(item);
 
                 return list;
             }
@@ -366,9 +367,9 @@ namespace WebDAVSharp.Server.MethodHandlers
             XmlElement xmlElement = webDavProperty.ToXmlElement(xmlDocument);
 
 
-            // If the webDavProperty is the resourcetype property
-            // and the webDavStoreItem is a collection
-            // add the collection XmlElement as a child to the xmlElement
+                // If the webDavProperty is the resourcetype property
+                // and the webDavStoreItem is a collection
+                // add the collection XmlElement as a child to the xmlElement
             if (webDavProperty.Name != "resourcetype" || !iWebDavStoreItem.IsCollection)
                 return xmlElement;
 

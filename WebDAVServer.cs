@@ -6,12 +6,12 @@ using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
-using Common.Logging;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Adapters.AuthenticationTypes;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.MethodHandlers;
 using WebDAVSharp.Server.Stores;
+using log4net;
 using WebDAVSharp.Server.Stores.Locks;
 
 namespace WebDAVSharp.Server
@@ -35,6 +35,7 @@ namespace WebDAVSharp.Server
         internal readonly static ILog _log = LogManager.GetCurrentClassLogger();
         private readonly object _threadLock = new object();
         private ManualResetEvent _stopEvent;
+
         private Thread _thread;
 
         #endregion
@@ -217,7 +218,7 @@ namespace WebDAVSharp.Server
                     methodHandler
                 };
             _methodHandlers = handlersWithNames.ToDictionary(v => v.name, v => v.methodHandler);
-        }
+            }
 
         #endregion
 
@@ -248,16 +249,16 @@ namespace WebDAVSharp.Server
         /// <exception cref="ObjectDisposedException">This <see cref="WebDavServer" /> instance has been disposed of.</exception>
         /// <exception cref="InvalidOperationException">The server is already running.</exception>
         public void Start(String url)
-        {
+            {
             Listener.Prefixes.Add(url);
             EnsureNotDisposed();
             lock (_threadLock)
-            {
-                if (_thread != null)
                 {
+                if (_thread != null)
+                    {
                     throw new InvalidOperationException(
                         "This WebDAVServer instance is already running, call to Start is invalid at this point");
-                }
+                    }
 
                 _stopEvent = new ManualResetEvent(false);
 
@@ -284,10 +285,10 @@ namespace WebDAVSharp.Server
             lock (_threadLock)
             {
                 if (_thread == null)
-                {
+                    {
                     throw new InvalidOperationException(
                         "This WebDAVServer instance is not running, call to Stop is invalid at this point");
-                }
+                    }
 
                 _stopEvent.Set();
                 _thread.Join();

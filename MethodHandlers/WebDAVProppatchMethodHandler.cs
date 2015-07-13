@@ -5,10 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Xml;
-using Common.Logging;
+
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Stores;
 using WebDAVSharp.Server.Utilities;
+using log4net;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {

@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Principal;
 using System.Threading;
 using WebDAVSharp.Server.Stores.BaseClasses;
+using log4net;
 
 namespace WebDAVSharp.Server.Stores.DiskStore
 {
