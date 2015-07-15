@@ -13,6 +13,7 @@ using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
 using log4net;
 using WebDAVSharp.Server.Stores.Locks;
+using WebDAVSharp.Server.Utilities;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
@@ -21,7 +22,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// </summary>
     internal class WebDavLockMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
     {
-        
+
         #region Properties
 
         /// <summary>
@@ -54,7 +55,10 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// objects to use.</param>
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavPreconditionFailedException"></exception>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        public void ProcessRequest(
+            WebDavServer server,
+            IHttpListenerContext context,
+            IWebDavStore store)
         {
 
 
@@ -75,54 +79,54 @@ namespace WebDAVSharp.Server.MethodHandlers
             if (string.IsNullOrEmpty(locktoken))
             {
                 #region New Lock
-            // try to read the body
-            try
-            {
-                StreamReader reader = new StreamReader(context.Request.InputStream, Encoding.UTF8);
-                string requestBody = reader.ReadToEnd();
-
-                if (!requestBody.Equals("") && requestBody.Length != 0)
+                // try to read the body
+                try
                 {
+                    StreamReader reader = new StreamReader(context.Request.InputStream, Encoding.UTF8);
+                    string requestBody = reader.ReadToEnd();
 
-                    requestDocument.LoadXml(requestBody);
+                    if (!requestBody.Equals("") && requestBody.Length != 0)
+                    {
+
+                        requestDocument.LoadXml(requestBody);
 
                         if (requestDocument.DocumentElement != null &&
                             requestDocument.DocumentElement.LocalName != "prop" &&
                         requestDocument.DocumentElement.LocalName != "lockinfo")
-                    {
+                        {
                             WebDavServer.Log.Debug("LOCK method without prop or lockinfo element in xml document");
+                        }
+
+                        manager = new XmlNamespaceManager(requestDocument.NameTable);
+                        manager.AddNamespace("D", "DAV:");
+                        manager.AddNamespace("Office", "schemas-microsoft-com:office:office");
+                        manager.AddNamespace("Repl", "http://schemas.microsoft.com/repl/");
+                        manager.AddNamespace("Z", "urn:schemas-microsoft-com:");
+
+                        // Get the lockscope, locktype and owner as XmlNodes from the XML document
+                        lockscopeNode = requestDocument.DocumentElement.SelectSingleNode("D:lockscope", manager);
+                        locktypeNode = requestDocument.DocumentElement.SelectSingleNode("D:locktype", manager);
+                        ownerNode = requestDocument.DocumentElement.SelectSingleNode("D:owner", manager);
                     }
-
-                    manager = new XmlNamespaceManager(requestDocument.NameTable);
-                    manager.AddNamespace("D", "DAV:");
-                    manager.AddNamespace("Office", "schemas-microsoft-com:office:office");
-                    manager.AddNamespace("Repl", "http://schemas.microsoft.com/repl/");
-                    manager.AddNamespace("Z", "urn:schemas-microsoft-com:");
-
-                    // Get the lockscope, locktype and owner as XmlNodes from the XML document
-                    lockscopeNode = requestDocument.DocumentElement.SelectSingleNode("D:lockscope", manager);
-                    locktypeNode = requestDocument.DocumentElement.SelectSingleNode("D:locktype", manager);
-                    ownerNode = requestDocument.DocumentElement.SelectSingleNode("D:owner", manager);
+                    else
+                    {
+                        throw new WebDavPreconditionFailedException();
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw new WebDavPreconditionFailedException();
-                }
-            }
-            catch (Exception ex)
-            {
                     WebDavServer.Log.Warn(ex.Message);
-                throw;
-            }
+                    throw;
+                }
 
 
-            /***************************************************************************************************
-             * Lock the file or folder
-             ***************************************************************************************************/
+                /***************************************************************************************************
+                 * Lock the file or folder
+                 ***************************************************************************************************/
 
 
-            // Get the parent collection of the item
-            IWebDavStoreCollection collection = GetParentCollection(server, store, context.Request.Url);
+                // Get the parent collection of the item
+                IWebDavStoreCollection collection = GetParentCollection(server, store, context.Request.Url);
 
                 WebDavLockScope lockscope = (lockscopeNode.InnerXml.StartsWith("<D:exclusive"))
                     ? WebDavLockScope.Exclusive
@@ -139,12 +143,12 @@ namespace WebDAVSharp.Server.MethodHandlers
                     out locktoken, requestDocument, depth);
 
                 // Get the item from the collection
-            try
-            {
+                try
+                {
                     GetItemFromCollection(collection, context.Request.Url);
-            }
-            catch (Exception)
-            {
+                }
+                catch (Exception)
+                {
                     lockResult = (int)HttpStatusCode.Created;
                 }
                 #endregion
@@ -168,8 +172,8 @@ namespace WebDAVSharp.Server.MethodHandlers
                         requestDocument.DocumentElement.LocalName != "lockinfo")
                     {
                         WebDavServer.Log.Debug("LOCK method without prop or lockinfo element in xml document");
-            }
-           
+                    }
+
                     manager = new XmlNamespaceManager(requestDocument.NameTable);
                     manager.AddNamespace("D", "DAV:");
                     manager.AddNamespace("Office", "schemas-microsoft-com:office:office");
@@ -186,7 +190,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                     WebDavServer.Log.Warn(ex.Message);
                     throw;
                 }
-            
+
                 #endregion
             }
 
@@ -216,7 +220,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             // The depth element
             WebDavProperty depthProperty = new WebDavProperty("depth", (depth == 0 ? "0" : "Infinity"));
             activelock.AppendChild(depthProperty.ToXmlElement(responseDoc));
-            
+
             // The locktoken element
             WebDavProperty locktokenProperty = new WebDavProperty("locktoken", string.Empty);
             XmlElement locktokenElement = locktokenProperty.ToXmlElement(responseDoc);
@@ -229,12 +233,26 @@ namespace WebDAVSharp.Server.MethodHandlers
             /***************************************************************************************************
              * Send the response
              ***************************************************************************************************/
-            
+
             // convert the StringBuilder
             string resp = responseDoc.InnerXml;
+            if (WebDavServer.Log.IsDebugEnabled)
+            {
+                WebDavServer.Log.DebugFormat(
+@"Request {0}:{1}:{2}
+Request
+{3}
+Response:
+{4}",
+                context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url,
+                requestDocument.Beautify(),
+                responseDoc.Beautify());
+            }
+
+
             byte[] responseBytes = Encoding.UTF8.GetBytes(resp);
 
-            
+
             context.Response.StatusCode = lockResult;
             context.Response.StatusDescription = HttpWorkerRequest.GetStatusDescription(lockResult);
 

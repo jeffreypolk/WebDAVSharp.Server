@@ -58,13 +58,27 @@ namespace WebDAVSharp.Server.MethodHandlers
             if (collection == null)
                 throw new WebDavConflictException(String.Format("Get parent collection return null. Uri: {0}", childUri));
 
-            if (WebDavServer.Log.IsDebugEnabled)
-            {
-                WebDavServer.Log.DebugFormat("GETPARENTCOLLECTION: uri {0} parenturi {1} return collection {2}",
-                    childUri, parentCollectionUri, collection.ItemPath)
-            }
+            //if (WebDavServer.Log.IsDebugEnabled)
+            //{
+            //    WebDavServer.Log.DebugFormat("GETPARENTCOLLECTION: uri {0} parenturi {1} return collection {2}",
+            //        childUri, parentCollectionUri, GetFullItemPath(collection));
+            //}
             
             return collection;
+        }
+
+        public static string GetFullItemPath(IWebDavStoreCollection collection)
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            var current = collection;
+            while (current != null)
+            {
+                sb.Insert(0, current.Name);
+                sb.Append("/");
+                current = current.ParentCollection;
+            }
+            sb.Length -= 1;
+            return sb.ToString();
         }
 
         /// <summary>

@@ -57,7 +57,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                 );
             if (collection.GetItemByName(collectionName) != null)
                 throw new WebDavMethodNotAllowedException();
-
+              
             collection.CreateCollection(collectionName);
 
             context.SendSimpleResponse((int)HttpStatusCode.Created);

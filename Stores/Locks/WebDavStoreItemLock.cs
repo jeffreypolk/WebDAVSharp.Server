@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Xml;
 
 
@@ -133,8 +134,7 @@ namespace WebDAVSharp.Server.Stores.Locks
                         ref requestedlocktimeout, ref locktoken,
                         requestDocument, depth));
 
-                    WebDavServer.Log.Debug("Created New Lock (" + lockscope + "), URI had no locks.  Timeout:" +
-                                           requestedlocktimeout);
+                    WebDavServer.Log.DebugFormat("Created New Lock ({0}), URI {1} had no locks. Timeout: {2}", lockscope, path, requestedlocktimeout);
 
                     return (int)HttpStatusCode.OK;
                 }
@@ -143,7 +143,15 @@ namespace WebDAVSharp.Server.Stores.Locks
                 //This means the lock fails because you can only have 1 exclusive lock.
                 if (lockscope == WebDavLockScope.Exclusive)
                 {
-                    WebDavServer.Log.Debug("Lock Creation Failed (Exclusive), URI already has a lock.");
+                    //TODO: Verify, it seems that the windows client issues multiple lock, if the
+                    //lock was already issued to the same identity, we can consider the lock to 
+                    //be a refresh.
+                    if (ObjectLocks[path].All(l => l.Owner == lockowner))
+                    {
+                        //the same owner requested a lock it is ok
+                        return (int)HttpStatusCode.OK;
+                    }
+                    WebDavServer.Log.DebugFormat("Lock Creation Failed (Exclusive), URI {0} already has a lock.", path);
                     return 423;
                 }
 
@@ -187,7 +195,7 @@ namespace WebDAVSharp.Server.Stores.Locks
             CleanLocks(path);
             if (string.IsNullOrEmpty(locktoken))
             {
-                WebDavServer.Log.Debug("Unlock failed, No Token!.");
+                WebDavServer.Log.DebugFormat("Unlock failed for {0}, No Token!.", path);
                 return (int)HttpStatusCode.BadRequest;
             }
 
@@ -195,13 +203,26 @@ namespace WebDAVSharp.Server.Stores.Locks
             {
                 if (!ObjectLocks.ContainsKey(path))
                 {
-                    WebDavServer.Log.Debug("Unlock failed, Lock does not exist!.");
+                    WebDavServer.Log.DebugFormat("Unlock failed, Lock does not exist for {0}!.", path);
                     return (int)HttpStatusCode.Conflict;
                 }
 
                 WebDaveStoreItemLockInstance ilock = ObjectLocks[path].FirstOrDefault(d => d.Token == locktoken && d.Owner == owner);
                 if (ilock == null)
+                {
+                    if (WebDavServer.Log.IsDebugEnabled)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        foreach (var uriLock in ObjectLocks[path])
+                        {
+                            sb.AppendFormat("token:{0} owner:{1} type: {2}\n", uriLock.Token, uriLock.Owner, uriLock.LockType);
+                        }
+                        WebDavServer.Log.DebugFormat("Unlock failed: {0} is locked but not whith the same token. All tokens:{1}", path, sb.ToString());
+                    }
+
                     return (int)HttpStatusCode.Conflict;
+                }
+                    
                 //Remove the lock
                 ObjectLocks[path].Remove(ilock);
 
@@ -209,7 +230,7 @@ namespace WebDAVSharp.Server.Stores.Locks
                 if (ObjectLocks[path].Count == 0)
                     ObjectLocks.Remove(path);
 
-                WebDavServer.Log.Debug("Unlock successful.");
+                WebDavServer.Log.DebugFormat("Unlock successful {0} token {1} owner {2}", path, locktoken, owner);
                 return (int)HttpStatusCode.NoContent;
             }
         }
