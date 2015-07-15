@@ -213,7 +213,7 @@ Response:
             }
             // if the item is not a document, throw conflict exception
             if (!(iWebDavStoreItem is IWebDavStoreDocument))
-                throw new WebDavConflictException();
+                throw new WebDavConflictException(String.Format("Web dav item is not a document nor a collection: {0} depth {1}", iWebDavStoreItem.ItemPath, depth));
 
             // add the item to the list
             list.Add(iWebDavStoreItem);

@@ -117,7 +117,10 @@ namespace WebDAVSharp.Server
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavNotFoundException">If the item was not found.</exception>
         /// <exception cref="WebDavConflictException"><paramref name="uri" /> refers to a document in a collection, where the collection does not exist.</exception>
         /// <exception cref="WebDavNotFoundException"><paramref name="uri" /> refers to a document that does not exist.</exception>
-        public static IWebDavStoreItem GetItem(this Uri uri, WebDavServer server, IWebDavStore store)
+        public static IWebDavStoreItem GetItem(
+            this Uri uri,
+            WebDavServer server, 
+            IWebDavStore store)
         {
             if (uri == null)
                 throw new ArgumentNullException("uri");
@@ -135,10 +138,11 @@ namespace WebDAVSharp.Server
             
             for (int index = prefixUri.Segments.Length; index < uri.Segments.Length; index++)
             {
-                string segmentName = Uri.UnescapeDataString(uri.Segments[index]);
-                IWebDavStoreItem nextItem = collection.GetItemByName(segmentName.TrimEnd('/', '\\'));
+                string segmentName = Uri.UnescapeDataString(uri.Segments[index]).TrimEnd('/', '\\');
+                
+                IWebDavStoreItem nextItem = collection.GetItemByName(segmentName);
                 if (nextItem == null)
-                    throw new WebDavNotFoundException(); //throw new WebDavConflictException();
+                    throw new WebDavNotFoundException(String.Format("Cannot find item {0} from collection {1}", segmentName, collection.ItemPath)); //throw new WebDavConflictException();
 
                 if (index == uri.Segments.Length - 1)
                     item = nextItem;
@@ -146,12 +150,12 @@ namespace WebDAVSharp.Server
                 {
                     collection = nextItem as IWebDavStoreCollection;
                     if (collection == null)
-                        throw new WebDavNotFoundException();
+                        throw new WebDavNotFoundException(String.Format("NextItem [{0}] is not a collection", nextItem.ItemPath));
                 }
             }
 
             if (item == null)
-                throw new WebDavNotFoundException();
+                throw new WebDavNotFoundException(String.Format("Unable to find {0}", uri));
 
             return item;
         }

@@ -346,7 +346,8 @@ namespace WebDAVSharp.Server
             Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
 
             String callInfo = String.Format("{0}:{1}:{2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
-            _log.DebugFormat("CALLED: {0}", callInfo);
+            //_log.DebugFormat("CALL START: {0}", callInfo);
+            log4net.ThreadContext.Properties["webdav-request"] = callInfo;
             try
             {
                 try
@@ -359,7 +360,7 @@ namespace WebDAVSharp.Server
                     context.Response.AppendHeader("DAV", "1,2,1#extend");
 
                     methodHandler.ProcessRequest(this, context, Store);
-
+                    _log.DebugFormat("CALL FINISH: {0}", callInfo);
                 }
                 catch (WebDavException)
                 {
@@ -372,12 +373,12 @@ namespace WebDAVSharp.Server
                 catch (FileNotFoundException ex)
                 {
                     _log.Warn(callInfo + ": " + ex.Message, ex);
-                    throw new WebDavNotFoundException(innerException: ex);
+                    throw new WebDavNotFoundException("FileNotFound",  innerException: ex);
                 }
                 catch (DirectoryNotFoundException ex)
                 {
                     _log.Warn(callInfo + ": " + ex.Message, ex);
-                    throw new WebDavNotFoundException(innerException: ex);
+                    throw new WebDavNotFoundException("DirectoryNotFound", innerException: ex);
                 }
                 catch (NotImplementedException ex)
                 {
@@ -386,7 +387,7 @@ namespace WebDAVSharp.Server
                 }
                 catch (Exception ex)
                 {
-                    _log.Warn(callInfo + ": " + ex.Message, ex);
+                    _log.Error(callInfo + ": " + ex.Message, ex);
                     throw new WebDavInternalServerException(innerException: ex);
                 }
             }
@@ -408,7 +409,7 @@ namespace WebDAVSharp.Server
             }
             finally
             {
-                _log.Debug(context.Response.StatusCode + " " + context.Response.StatusDescription + ": " + context.Request.HttpMethod + " " + context.Request.RemoteEndPoint + ": " + context.Request.Url);
+                log4net.ThreadContext.Properties["webdav-request"] = null;
             }
         }
 

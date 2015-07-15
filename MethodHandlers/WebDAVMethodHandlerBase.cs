@@ -36,7 +36,10 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// </exception>
         /// <exception cref="WebDavUnauthorizedException">When the user is unauthorized and doesn't have access</exception>
         /// <exception cref="WebDavConflictException">When the parent collection doesn't exist</exception>
-        public static IWebDavStoreCollection GetParentCollection(WebDavServer server, IWebDavStore store, Uri childUri)
+        public static IWebDavStoreCollection GetParentCollection(
+            WebDavServer server, 
+            IWebDavStore store, 
+            Uri childUri)
         {
             Uri parentCollectionUri = childUri.GetParentUri();
             IWebDavStoreCollection collection;
@@ -48,13 +51,19 @@ namespace WebDAVSharp.Server.MethodHandlers
             {
                 throw new WebDavUnauthorizedException();
             }
-            catch (WebDavNotFoundException)
+            catch (WebDavNotFoundException wex)
             {
-                throw new WebDavConflictException();
+                throw new WebDavConflictException(innerException : wex);
             }
             if (collection == null)
-                throw new WebDavConflictException();
+                throw new WebDavConflictException(String.Format("Get parent collection return null. Uri: {0}", childUri));
 
+            if (WebDavServer.Log.IsDebugEnabled)
+            {
+                WebDavServer.Log.DebugFormat("GETPARENTCOLLECTION: uri {0} parenturi {1} return collection {2}",
+                    childUri, parentCollectionUri, collection.ItemPath)
+            }
+            
             return collection;
         }
 
@@ -73,20 +82,22 @@ namespace WebDAVSharp.Server.MethodHandlers
         public static IWebDavStoreItem GetItemFromCollection(IWebDavStoreCollection collection, Uri childUri)
         {
             IWebDavStoreItem item;
+            String name = null;
             try
             {
-                item = collection.GetItemByName(Uri.UnescapeDataString(childUri.Segments.Last().TrimEnd('/', '\\')));
+                name = Uri.UnescapeDataString(childUri.Segments.Last().TrimEnd('/', '\\'));
+                item = collection.GetItemByName(name);
             }
             catch (UnauthorizedAccessException)
             {
                 throw new WebDavUnauthorizedException();
             }
-            catch (WebDavNotFoundException)
+            catch (WebDavNotFoundException wex)
             {
-                throw new WebDavNotFoundException();
+                throw new WebDavNotFoundException(String.Format("Cannot found name {0} from uri {1} father {2}", name, childUri, collection.ItemPath), wex);
             }
             if (item == null)
-                throw new WebDavNotFoundException();
+                throw new WebDavNotFoundException(String.Format("Cannot found name {0} from uri {1} father {2}", name, childUri, collection.ItemPath));
 
             return item;
         }
@@ -176,7 +187,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             if (!String.IsNullOrEmpty(destinationUri))
                 return new Uri(destinationUri);
             // else, throw exception
-            throw new WebDavConflictException();
+            throw new WebDavConflictException(String.Format("Get destination header null. Request uri: {0} ", request.Url.AbsoluteUri));
         }
 
         #endregion

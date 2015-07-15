@@ -57,7 +57,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             IWebDavStoreItem item = GetItemFromCollection(collection, context.Request.Url);
             IWebDavStoreDocument doc = item as IWebDavStoreDocument;
             if (doc == null)
-                throw new WebDavNotFoundException();
+                throw new WebDavNotFoundException(string.Format("Cannot find document item  {0}", context.Request.Url));
 
             long docSize = doc.Size;
             if (docSize == 0)

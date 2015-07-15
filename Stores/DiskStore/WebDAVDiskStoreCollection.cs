@@ -256,7 +256,7 @@ namespace WebDAVSharp.Server.Stores.DiskStore
             if (item is WebDavDiskStoreDocument)
             {
                 if (!File.Exists(itemPath))
-                    throw new WebDavNotFoundException();
+                    throw new WebDavNotFoundException(String.Format("Cannot delete item {0}", itemPath) );
                 try
                 {
                     // Impersonate the current user and delete the file
@@ -273,7 +273,7 @@ namespace WebDAVSharp.Server.Stores.DiskStore
             else
             {
                 if (!Directory.Exists(itemPath))
-                    throw new WebDavNotFoundException();
+                    throw new WebDavNotFoundException(String.Format("Directory {0} does not exists", itemPath));
                 try
                 {
                     // Impersonate the current user and delete the directory
