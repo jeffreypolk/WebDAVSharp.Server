@@ -20,7 +20,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>PROPFIND</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavPropfindMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavPropfindMethodHandler : WebDavMethodHandlerBase
     {
         #region Variables
 
@@ -54,7 +54,7 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -80,7 +80,14 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// objects to use.</param>
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavUnauthorizedException"></exception>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        /// <param name="response"></param>
+        /// <param name="request"></param>
+        protected override void OnProcessRequest(
+           WebDavServer server,
+           IHttpListenerContext context,
+           IWebDavStore store,
+           XmlDocument request,
+           XmlDocument response)
         {
             _Context = context;
             /***************************************************************************************************
@@ -101,17 +108,16 @@ namespace WebDAVSharp.Server.MethodHandlers
             }
 
             // Get the XmlDocument from the request
-            XmlDocument requestDoc = GetXmlDocument(context.Request);
-
+           
             // See what is requested
             _requestedProperties = new List<WebDavProperty>();
-            if (requestDoc.DocumentElement != null)
+            if (request.DocumentElement != null)
             {
-                if (requestDoc.DocumentElement.LocalName != "propfind")
+                if (request.DocumentElement.LocalName != "propfind")
                     WebDavServer.Log.Debug("PROPFIND method without propfind in xml document");
                 else
                 {
-                    XmlNode n = requestDoc.DocumentElement.FirstChild;
+                    XmlNode n = request.DocumentElement.FirstChild;
                     if (n == null)
                         WebDavServer.Log.Debug("propfind element without children");
                     else
@@ -142,8 +148,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             /***************************************************************************************************
              * Create the body for the response
              ***************************************************************************************************/
-
-            XmlDocument responseDoc = ResponseDocument(context, isPropname);
+            XmlDocument responseDoc = ResponseDocument(context, isPropname, response);
 
             /***************************************************************************************************
              * Send the response
@@ -157,12 +162,12 @@ Request
 Response:
 {4}",
                 context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url,
-                requestDoc.Beautify(), 
-                responseDoc.Beautify());
+                request.Beautify(), 
+                response.Beautify());
             }
 
 
-            SendResponse(context, responseDoc);
+            SendResponse(context, response);
         }
 
         #region RetrieveInformation
@@ -274,13 +279,13 @@ Response:
         /// </summary>
         /// <param name="context">The <see cref="IHttpListenerContext" /></param>
         /// <param name="propname">The boolean defining the Propfind propname request</param>
+        /// <param name="responseDoc"></param>
         /// <returns>
         /// The <see cref="XmlDocument" /> containing the response body
         /// </returns>
-        private XmlDocument ResponseDocument(IHttpListenerContext context, bool propname)
+        private XmlDocument ResponseDocument(IHttpListenerContext context, bool propname, XmlDocument responseDoc)
         {
             // Create the basic response XmlDocument
-            XmlDocument responseDoc = new XmlDocument();
             const string responseXml = "<?xml version=\"1.0\"?><D:multistatus xmlns:D=\"DAV:\"></D:multistatus>";
             responseDoc.LoadXml(responseXml);
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
@@ -12,7 +13,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>PUT</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavPutMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavPutMethodHandler : WebDavMethodHandlerBase
     {
         #region Properties
 
@@ -22,7 +23,7 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -47,7 +48,14 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavMethodNotAllowedException"></exception>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavLengthRequiredException">If the ContentLength header was not found</exception>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        /// <param name="response"></param>
+        /// <param name="request"></param>
+        protected override void OnProcessRequest(
+           WebDavServer server,
+           IHttpListenerContext context,
+           IWebDavStore store,
+           XmlDocument request,
+           XmlDocument response)
         {
             // Get the parent collection
             IWebDavStoreCollection parentCollection = GetParentCollection(server, store, context.Request.Url);

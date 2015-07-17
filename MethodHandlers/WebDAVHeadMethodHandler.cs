@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Web;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
@@ -10,7 +11,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>PROPFIND</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavHeadMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavHeadMethodHandler : WebDavMethodHandlerBase
     {
 
         #region Properties
@@ -20,7 +21,7 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -49,7 +50,14 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <para>
         ///   <paramref name="context" /> specifies a request for a store item that is not a document.</para></exception>
         /// <exception cref="WebDavConflictException"><paramref name="context" /> specifies a request for a store item using a collection path that does not exist.</exception>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        /// <param name="response"></param>
+        /// <param name="request"></param>
+        protected override void OnProcessRequest(
+           WebDavServer server,
+           IHttpListenerContext context,
+           IWebDavStore store,
+           XmlDocument request,
+           XmlDocument response)
         {
             // Get the parent collection of the item
             IWebDavStoreCollection collection = GetParentCollection(server, store, context.Request.Url);

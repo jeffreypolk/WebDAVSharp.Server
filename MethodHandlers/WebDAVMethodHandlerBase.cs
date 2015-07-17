@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
@@ -9,13 +11,15 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This is the base class for <see cref="IWebDavMethodHandler" /> implementations.
     /// </summary>
-    internal abstract class WebDavMethodHandlerBase
+    internal abstract class WebDavMethodHandlerBase : IWebDavMethodHandler
     {
 
         #region Variables
 
         private const int DepthInfinity = -1;
 
+        public abstract IEnumerable<string> Names { get; }
+        
         #endregion
 
         #region Static Functions
@@ -203,6 +207,25 @@ namespace WebDAVSharp.Server.MethodHandlers
             // else, throw exception
             throw new WebDavConflictException(String.Format("Get destination header null. Request uri: {0} ", request.Url.AbsoluteUri));
         }
+
+        public void ProcessRequest(
+            WebDavServer server, 
+            IHttpListenerContext context, 
+            IWebDavStore store, 
+            out XmlDocument request, 
+            out XmlDocument response)
+        {
+            request = new XmlDocument();
+            response = new XmlDocument();
+            OnProcessRequest(server, context, store, request, response);
+        }
+
+        protected abstract void OnProcessRequest(
+            WebDavServer server,
+            IHttpListenerContext context,
+            IWebDavStore store,
+            XmlDocument request,
+            XmlDocument response);
 
         #endregion
     }

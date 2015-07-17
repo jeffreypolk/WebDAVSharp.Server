@@ -13,6 +13,8 @@ using WebDAVSharp.Server.MethodHandlers;
 using WebDAVSharp.Server.Stores;
 using log4net;
 using WebDAVSharp.Server.Stores.Locks;
+using System.Xml;
+using WebDAVSharp.Server.Utilities;
 
 namespace WebDAVSharp.Server
 {
@@ -358,9 +360,24 @@ namespace WebDAVSharp.Server
                         throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
 
                     context.Response.AppendHeader("DAV", "1,2,1#extend");
+                    XmlDocument request;
+                    XmlDocument response;
+                    StringBuilder headers = new StringBuilder();
+                    if (_log.IsDebugEnabled)
+                    {
+                        foreach (String header in context.Request.Headers)
+                        {
+                            headers.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
+                        }
+                    }
 
-                    methodHandler.ProcessRequest(this, context, Store);
-                    _log.DebugFormat("CALL FINISH: {0}", callInfo);
+                    methodHandler.ProcessRequest(this, context, Store, out request, out response);
+
+                    if (_log.IsDebugEnabled)
+                    {
+                        _log.DebugFormat("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}", 
+                            callInfo, headers, request.Beautify(), response.Beautify());
+                    }
                 }
                 catch (WebDavException)
                 {

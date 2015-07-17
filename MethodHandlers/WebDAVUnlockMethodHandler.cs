@@ -4,6 +4,7 @@ using System.Net;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Stores;
 using WebDAVSharp.Server.Stores.Locks;
@@ -13,7 +14,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>PUT</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavUnlockMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavUnlockMethodHandler : WebDavMethodHandlerBase
     {
 
         #region Properties
@@ -24,7 +25,7 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -46,7 +47,14 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <see cref="IHttpListenerContext" /> object containing both the request and response
         /// objects to use.</param>
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        /// <param name="response"></param>
+        /// <param name="request"></param>
+        protected override void OnProcessRequest(
+           WebDavServer server,
+           IHttpListenerContext context,
+           IWebDavStore store,
+           XmlDocument request,
+           XmlDocument response)
         {
             /***************************************************************************************************
             * Send the response
