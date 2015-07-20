@@ -110,7 +110,7 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
         /// <summary>
         /// Gets if this <see cref="IWebDavStoreItem" /> is a collection.
         /// </summary>
-        public bool IsCollection
+        public virtual bool IsCollection
         {
             get
             {
