@@ -19,6 +19,7 @@ namespace WebDAVSharp.Server.Utilities
         /// <returns></returns>
         static public string Beautify(this XmlDocument doc)
         {
+            if (doc == null) return "";
             StringBuilder sb = new StringBuilder();
             XmlWriterSettings settings = new XmlWriterSettings
             {

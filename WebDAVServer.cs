@@ -107,7 +107,7 @@ namespace WebDAVSharp.Server
         /// <value>
         /// The listener.
         /// </value>
-        internal IHttpListener Listener
+        internal protected IHttpListener Listener
         {
             get
             {
@@ -333,6 +333,26 @@ namespace WebDAVSharp.Server
         }
 
         /// <summary>
+        /// Called before actual processing is done, useful to do some preliminary 
+        /// check or whatever the real implementation need to do.
+        /// </summary>
+        /// <param name="context"></param>
+        protected virtual void OnProcessRequestStarted(IHttpListenerContext context) 
+        {
+        
+        }
+
+        /// <summary>
+        /// Called after everything was processed, it can be used for doing specific
+        /// cleanup for the real implementation.
+        /// </summary>
+        /// <param name="context"></param>
+        protected virtual void OnProcessRequestCompleted(IHttpListenerContext context)
+        {
+
+        }
+
+        /// <summary>
         /// Processes the request.
         /// </summary>
         /// <param name="state">The state.</param>
@@ -344,12 +364,23 @@ namespace WebDAVSharp.Server
         private void ProcessRequest(object state)
         {
             IHttpListenerContext context = (IHttpListenerContext)state;
-
+            OnProcessRequestStarted(context);
             Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
 
             String callInfo = String.Format("{0}:{1}:{2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
             //_log.DebugFormat("CALL START: {0}", callInfo);
             log4net.ThreadContext.Properties["webdav-request"] = callInfo;
+            XmlDocument request = null;
+            XmlDocument response = null;
+            StringBuilder headers = new StringBuilder();
+            if (_log.IsDebugEnabled)
+            {
+                foreach (String header in context.Request.Headers)
+                {
+                    headers.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
+                }
+            }
+
             try
             {
                 try
@@ -360,17 +391,6 @@ namespace WebDAVSharp.Server
                         throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
 
                     context.Response.AppendHeader("DAV", "1,2,1#extend");
-                    XmlDocument request;
-                    XmlDocument response;
-                    StringBuilder headers = new StringBuilder();
-                    if (_log.IsDebugEnabled)
-                    {
-                        foreach (String header in context.Request.Headers)
-                        {
-                            headers.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
-                        }
-                    }
-
                     methodHandler.ProcessRequest(this, context, Store, out request, out response);
 
                     if (_log.IsDebugEnabled)
@@ -410,7 +430,9 @@ namespace WebDAVSharp.Server
             }
             catch (WebDavException ex)
             {
-                _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.StatusCode + " " + ex.Message, ex);
+                _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
+                            callInfo, headers, request.Beautify(), response.Beautify()), ex);
+
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;
                 if (ex.Message != context.Response.StatusDescription)
@@ -427,6 +449,7 @@ namespace WebDAVSharp.Server
             finally
             {
                 log4net.ThreadContext.Properties["webdav-request"] = null;
+                OnProcessRequestCompleted(context);
             }
         }
 
