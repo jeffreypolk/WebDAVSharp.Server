@@ -389,28 +389,28 @@ namespace WebDAVSharp.Server
                 }
                 catch (FileNotFoundException ex)
                 {
-                    _log.Warn(callInfo + ": " + ex.Message, ex);
+                    _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
                     throw new WebDavNotFoundException("FileNotFound",  innerException: ex);
                 }
                 catch (DirectoryNotFoundException ex)
                 {
-                    _log.Warn(callInfo + ": " + ex.Message, ex);
+                    _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
                     throw new WebDavNotFoundException("DirectoryNotFound", innerException: ex);
                 }
                 catch (NotImplementedException ex)
                 {
-                    _log.Warn(callInfo + ": " + ex.Message, ex);
+                    _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
                     throw new WebDavNotImplementedException(innerException: ex);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(callInfo + ": " + ex.Message, ex);
+                    _log.Error("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
                     throw new WebDavInternalServerException(innerException: ex);
                 }
             }
             catch (WebDavException ex)
             {
-                _log.Warn(callInfo + ": " + ex.StatusCode + " " + ex.Message, ex);
+                _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.StatusCode + " " + ex.Message, ex);
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;
                 if (ex.Message != context.Response.StatusDescription)
