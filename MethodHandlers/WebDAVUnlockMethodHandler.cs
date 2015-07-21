@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Security.Principal;
@@ -60,7 +61,29 @@ namespace WebDAVSharp.Server.MethodHandlers
             * Send the response
             ***************************************************************************************************/
             WindowsIdentity Identity = (WindowsIdentity)Thread.GetData(Thread.GetNamedDataSlot(WebDavServer.HttpUser));
-            context.SendSimpleResponse(WebDavStoreItemLock.UnLock(context.Request.Url, GetLockTokenHeader(context.Request), Identity.Name));
+            var unlockResult = WebDavStoreItemLock.UnLock(context.Request.Url, GetLockTokenHeader(context.Request), Identity.Name);
+
+            IWebDavStoreCollection collection = GetParentCollection(server, store, context.Request.Url);
+            try
+            {
+                var item = GetItemFromCollection(collection, context.Request.Url);
+                if (item != null)
+                {
+                    //we already have an item
+                    var resourceCanBeUnLocked = item.UnLock(Identity.Name);
+                    if (!resourceCanBeUnLocked)
+                    {
+                        //TODO: decide what to do if the resource cannot be locked.
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+               WebDavServer.Log.Warn(
+                   String.Format("Request unlock on a resource that does not exists: {0}", context.Request.Url), ex);
+            }
+
+            context.SendSimpleResponse(unlockResult);
         }
 
         #endregion

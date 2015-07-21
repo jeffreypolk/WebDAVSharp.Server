@@ -157,6 +157,28 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
         {
         }
 
-      #endregion
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public virtual bool Lock(string token)
+        {
+            //Resource can always be locked
+            return true; 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public virtual bool UnLock(string token)
+        {
+            //Resource can always be unlocked
+            return true;
+        }
+
+        #endregion
     }
 }

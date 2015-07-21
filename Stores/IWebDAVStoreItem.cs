@@ -92,6 +92,18 @@ namespace WebDAVSharp.Server.Stores
             get;
         }
 
-        
+        /// <summary>
+        /// Try to lock the resource
+        /// </summary>
+        /// <returns>True if the resource is locked, false if the resource was
+        /// already locked and cannot be unlocked.</returns>
+        Boolean Lock(String token);
+
+        /// <summary>
+        /// Unlock the resource 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns>true if the unlock operation is successful</returns>
+        Boolean UnLock(String token);
     }
 }

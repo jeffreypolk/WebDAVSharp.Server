@@ -65,7 +65,6 @@ namespace WebDAVSharp.Server.MethodHandlers
            XmlDocument response)
         {
 
-
             /***************************************************************************************************
              * Retreive al the information from the request
              ***************************************************************************************************/
@@ -148,7 +147,16 @@ namespace WebDAVSharp.Server.MethodHandlers
                 // Get the item from the collection
                 try
                 {
-                    GetItemFromCollection(collection, context.Request.Url);
+                    var item = GetItemFromCollection(collection, context.Request.Url);
+                    if (item != null)
+                    {
+                        //we already have an item
+                        var resourceCanBeLocked = item.Lock(Identity.Name);
+                        if (!resourceCanBeLocked)
+                        {
+                            lockResult = 423; //Resource cannot be locked.
+                        }
+                    }
                 }
                 catch (Exception)
                 {
