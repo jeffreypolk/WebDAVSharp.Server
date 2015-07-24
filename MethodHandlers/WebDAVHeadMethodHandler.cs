@@ -60,11 +60,23 @@ namespace WebDAVSharp.Server.MethodHandlers
            XmlDocument response)
         {
             // Get the parent collection of the item
-            IWebDavStoreCollection collection = GetParentCollection(server, store, context.Request.Url);
 
-            // Get the item from the collection
-            IWebDavStoreItem item = GetItemFromCollection(collection, context.Request.Url);
-
+            IWebDavStoreCollection collection;
+            IWebDavStoreItem item = null;
+            //PATCH: Cyberduck and some windows ask HEAD of the root, and it was not supported.
+            var uri = context.Request.Url;
+            if (uri.Segments.Length == 1)
+            {
+                collection = store.Root;
+                item = store.Root;
+            }
+            else
+            {
+                collection = GetParentCollection(server, store, uri);
+                // Get the item from the collection
+                item = GetItemFromCollection(collection, context.Request.Url);
+            }
+           
             /***************************************************************************************************
             * Send the response
             ***************************************************************************************************/
