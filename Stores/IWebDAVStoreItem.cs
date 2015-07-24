@@ -95,9 +95,10 @@ namespace WebDAVSharp.Server.Stores
         /// <summary>
         /// Try to lock the resource
         /// </summary>
+        /// <param name="identity">The name of the identity that requested lock.</param>
         /// <returns>True if the resource is locked, false if the resource was
         /// already locked and cannot be unlocked.</returns>
-        Boolean Lock(String token);
+        Boolean Lock(String identity);
 
         /// <summary>
         /// Unlock the resource 
