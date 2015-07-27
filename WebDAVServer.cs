@@ -15,6 +15,7 @@ using log4net;
 using WebDAVSharp.Server.Stores.Locks;
 using System.Xml;
 using WebDAVSharp.Server.Utilities;
+using System.Diagnostics;
 
 namespace WebDAVSharp.Server
 {
@@ -310,12 +311,15 @@ namespace WebDAVSharp.Server
             try
             {
                 _listener.Start();
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 while (true)
                 {
-                    _log.DebugFormat("BackgroundThreadMethod poll");
+                    _log.DebugFormat("BackgroundThreadMethod poll ms: {0}", sw.ElapsedMilliseconds);
                     if (_stopEvent.WaitOne(0))
                         return;
 
+                    sw.Reset();
                     IHttpListenerContext context = Listener.GetContext(_stopEvent);
                     if (context == null)
                     {
@@ -323,7 +327,7 @@ namespace WebDAVSharp.Server
                         return;
                     }
                     _log.DebugFormat("Queued Context request: {0}", context.Request.HttpMethod);
-
+                    
                     ThreadPool.QueueUserWorkItem(ProcessRequest, context);
                 }
             }
