@@ -312,6 +312,7 @@ namespace WebDAVSharp.Server
                 _listener.Start();
                 while (true)
                 {
+                    _log.DebugFormat("BackgroundThreadMethod poll");
                     if (_stopEvent.WaitOne(0))
                         return;
 
@@ -321,6 +322,7 @@ namespace WebDAVSharp.Server
                         _log.Debug("Exiting thread");
                         return;
                     }
+                    _log.DebugFormat("Queued Context request: {0}", context.Request.HttpMethod);
 
                     ThreadPool.QueueUserWorkItem(ProcessRequest, context);
                 }
