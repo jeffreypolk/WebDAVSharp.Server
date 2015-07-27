@@ -148,11 +148,15 @@ namespace WebDAVSharp.Server.Stores.Locks
                     //be a refresh.
                     if (ObjectLocks[path].All(l => l.Owner == lockowner))
                     {
-                        //the same owner requested a lock it is ok
-                        return (int)HttpStatusCode.OK;
+                        //the same owner requested a lock it it should not happen but windows client
+                        //does so
+                        ObjectLocks[path].Clear(); //clear all old lock, 
                     }
-                    WebDavServer.Log.DebugFormat("Lock Creation Failed (Exclusive), URI {0} already has a lock.", path);
-                    return 423;
+                    else
+                    {
+                        WebDavServer.Log.DebugFormat("Lock Creation Failed (Exclusive), URI {0} already has a lock.", path);
+                        return 423;
+                    }
                 }
 
                 //If the scope is shared and all other locks on this uri are shared we are ok, otherwise we fail.

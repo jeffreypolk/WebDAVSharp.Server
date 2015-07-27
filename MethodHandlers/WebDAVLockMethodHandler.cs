@@ -236,9 +236,14 @@ namespace WebDAVSharp.Server.MethodHandlers
             XmlElement locktokenElement = locktokenProperty.ToXmlElement(response);
             WebDavProperty hrefProperty = new WebDavProperty("href", locktoken);//"opaquelocktoken:e71d4fae-5dec-22df-fea5-00a0c93bd5eb1");
             locktokenElement.AppendChild(hrefProperty.ToXmlElement(response));
-
-
             activelock.AppendChild(locktokenElement);
+
+            // The lockroot element
+            WebDavProperty lockRootProperty = new WebDavProperty("lockroot", string.Empty);
+            XmlElement lockRootElement = lockRootProperty.ToXmlElement(response);
+            WebDavProperty hrefRootProperty = new WebDavProperty("href", context.Request.Url.AbsoluteUri);//"lockroot
+            lockRootElement.AppendChild(hrefRootProperty.ToXmlElement(response));
+            activelock.AppendChild(lockRootElement);
 
             /***************************************************************************************************
              * Send the response

@@ -145,6 +145,18 @@ namespace WebDAVSharp.Server.Adapters
             _response.AppendHeader(name, value);
         }
 
+        public string DumpHeaders()
+        {
+            StringBuilder headers = new StringBuilder();
+            headers.AppendFormat("STATUS CODE: {0}\r\n", _response.StatusCode);
+            foreach (String header in _response.Headers)
+            {
+                headers.AppendFormat("{0}: {1}\r\n", header, _response.Headers[header]);
+            }
+            return headers.ToString();
+        }
+
+
         #endregion
     }
 }

@@ -367,17 +367,17 @@ namespace WebDAVSharp.Server
             OnProcessRequestStarted(context);
             Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
 
-            String callInfo = String.Format("{0}:{1}:{2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
+            String callInfo = String.Format("{0} : {1} : {2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
             //_log.DebugFormat("CALL START: {0}", callInfo);
             log4net.ThreadContext.Properties["webdav-request"] = callInfo;
             XmlDocument request = null;
             XmlDocument response = null;
-            StringBuilder headers = new StringBuilder();
+            StringBuilder requestHader = new StringBuilder();
             if (_log.IsDebugEnabled)
             {
                 foreach (String header in context.Request.Headers)
                 {
-                    headers.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
+                    requestHader.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
                 }
             }
 
@@ -395,8 +395,12 @@ namespace WebDAVSharp.Server
 
                     if (_log.IsDebugEnabled)
                     {
-                        _log.DebugFormat("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}", 
-                            callInfo, headers, request.Beautify(), response.Beautify());
+                        _log.DebugFormat("WEB-DAV-CALL-ENDED: {0}\r\nREQUEST HEADER\r\n{1}\r\nRESPONSE HEADER\r\n{2}\r\nrequest:{3}\r\nresponse{4}", 
+                            callInfo, 
+                            requestHader, 
+                            context.Response.DumpHeaders(), 
+                            request.Beautify(), 
+                            response.Beautify());
                     }
                 }
                 catch (WebDavException)
@@ -435,12 +439,12 @@ namespace WebDAVSharp.Server
                     //not found exception is quite common, Windows explorer often ask for files
                     //that are not there 
                     _log.Debug(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
-                        callInfo, headers, request.Beautify(), response.Beautify()), ex);
+                        callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
                 }
                 else
                 {
                     _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
-                        callInfo, headers, request.Beautify(), response.Beautify()), ex);
+                        callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
                 }
 
                 context.Response.StatusCode = ex.StatusCode;
@@ -462,6 +466,7 @@ namespace WebDAVSharp.Server
                 OnProcessRequestCompleted(context);
             }
         }
+       
 
         #endregion
     }
