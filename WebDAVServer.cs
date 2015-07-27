@@ -430,8 +430,18 @@ namespace WebDAVSharp.Server
             }
             catch (WebDavException ex)
             {
-                _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
-                            callInfo, headers, request.Beautify(), response.Beautify()), ex);
+                if (ex is WebDavNotFoundException)
+                {
+                    //not found exception is quite common, Windows explorer often ask for files
+                    //that are not there 
+                    _log.Debug(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
+                        callInfo, headers, request.Beautify(), response.Beautify()), ex);
+                }
+                else
+                {
+                    _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
+                        callInfo, headers, request.Beautify(), response.Beautify()), ex);
+                }
 
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;

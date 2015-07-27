@@ -29,7 +29,7 @@ namespace WebDAVSharp.Server
             if (uri == null)
                 throw new ArgumentNullException("uri");
             if (uri.Segments.Length == 1)
-                throw new InvalidOperationException("Cannot get parent of root");
+                return uri;
 
             string url = uri.ToString();
             int index = url.Length - 1;

@@ -106,5 +106,11 @@ namespace WebDAVSharp.Server.Stores
         /// <param name="token"></param>
         /// <returns>true if the unlock operation is successful</returns>
         Boolean UnLock(String token);
+
+        /// <summary>
+        /// return 
+        /// </summary>
+        /// <returns></returns>
+        WebDavItemInfo GetDocumentInfo();
     }
 }

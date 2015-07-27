@@ -179,6 +179,21 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
             return true;
         }
 
+        /// <summary>
+        /// TODO: we need to override this in derived classes to return correct
+        /// information.
+        /// </summary>
+        /// <returns></returns>
+        public virtual WebDavItemInfo GetDocumentInfo()
+        {
+            return new WebDavItemInfo()
+            {
+                CreationTime = DateTime.Now,
+                LastAccessTime = DateTime.Now,
+                LastWriteTime = DateTime.Now,
+            };
+        }
+
         #endregion
     }
 }

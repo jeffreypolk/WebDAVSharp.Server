@@ -111,32 +111,8 @@ namespace WebDAVSharp.Server.MethodHandlers
             // Get the item from the collection
             IWebDavStoreItem item = GetItemFromCollection(collection, context.Request.Url);
 
-            FileInfo fileInfo = new FileInfo(item.ItemPath);
-
-            if (propNode != null && fileInfo.Exists)
-            {
-                foreach (XmlNode node in propNode.ChildNodes)
-                {
-                    switch (node.LocalName)
-                    {
-                        case "Win32CreationTime":
-                            fileInfo.CreationTime = Convert.ToDateTime(node.InnerText).ToUniversalTime();
-                            break;
-                        case "Win32LastAccessTime":
-                            fileInfo.LastAccessTime = Convert.ToDateTime(node.InnerText).ToUniversalTime();
-                            break;
-                        case "Win32LastModifiedTime":
-                            fileInfo.LastWriteTime = Convert.ToDateTime(node.InnerText).ToUniversalTime();
-                            break;
-                        case "Win32FileAttributes":
-                            //todo Win32FileAttributes
-                            //fileInfo.Attributes = 
-                            //fileInfo.Attributes = Convert.ToDateTime(node.InnerText);
-                            break;
-                    }
-                }
-            }
-
+            //Alk: Original code use directly file info to grab some properties that were not used.
+            WebDavItemInfo info = item.GetDocumentInfo();
 
             /***************************************************************************************************
              * Create the body for the response
