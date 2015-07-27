@@ -369,107 +369,110 @@ namespace WebDAVSharp.Server
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavInternalServerException">If the server had an internal problem</exception>
         private void ProcessRequest(object state)
         {
-            IHttpListenerContext context = (IHttpListenerContext)state;
-            OnProcessRequestStarted(context);
-            Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
-
-            String callInfo = String.Format("{0} : {1} : {2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
-            //_log.DebugFormat("CALL START: {0}", callInfo);
-            log4net.ThreadContext.Properties["webdav-request"] = callInfo;
-            XmlDocument request = null;
-            XmlDocument response = null;
-            StringBuilder requestHader = new StringBuilder();
-            if (_log.IsDebugEnabled)
+            using (WebDavMetrics.GetMetricCallContext())
             {
-                foreach (String header in context.Request.Headers)
+                IHttpListenerContext context = (IHttpListenerContext)state;
+                OnProcessRequestStarted(context);
+                Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
+
+                String callInfo = String.Format("{0} : {1} : {2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
+                //_log.DebugFormat("CALL START: {0}", callInfo);
+                log4net.ThreadContext.Properties["webdav-request"] = callInfo;
+                XmlDocument request = null;
+                XmlDocument response = null;
+                StringBuilder requestHader = new StringBuilder();
+                if (_log.IsDebugEnabled)
                 {
-                    requestHader.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
-                }
-            }
-
-            try
-            {
-                try
-                {
-                    string method = context.Request.HttpMethod;
-                    IWebDavMethodHandler methodHandler;
-                    if (!_methodHandlers.TryGetValue(method, out methodHandler))
-                        throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
-
-                    context.Response.AppendHeader("DAV", "1,2,1#extend");
-                    methodHandler.ProcessRequest(this, context, Store, out request, out response);
-
-                    if (_log.IsDebugEnabled)
+                    foreach (String header in context.Request.Headers)
                     {
-                        _log.DebugFormat("WEB-DAV-CALL-ENDED: {0}\r\nREQUEST HEADER\r\n{1}\r\nRESPONSE HEADER\r\n{2}\r\nrequest:{3}\r\nresponse{4}", 
-                            callInfo, 
-                            requestHader, 
-                            context.Response.DumpHeaders(), 
-                            request.Beautify(), 
-                            response.Beautify());
+                        requestHader.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
                     }
                 }
-                catch (WebDavException)
-                {
-                    throw;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    throw new WebDavUnauthorizedException();
-                }
-                catch (FileNotFoundException ex)
-                {
-                    _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
-                    throw new WebDavNotFoundException("FileNotFound",  innerException: ex);
-                }
-                catch (DirectoryNotFoundException ex)
-                {
-                    _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
-                    throw new WebDavNotFoundException("DirectoryNotFound", innerException: ex);
-                }
-                catch (NotImplementedException ex)
-                {
-                    _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
-                    throw new WebDavNotImplementedException(innerException: ex);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
-                    throw new WebDavInternalServerException(innerException: ex);
-                }
-            }
-            catch (WebDavException ex)
-            {
-                if (ex is WebDavNotFoundException)
-                {
-                    //not found exception is quite common, Windows explorer often ask for files
-                    //that are not there 
-                    _log.Debug(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
-                        callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
-                }
-                else
-                {
-                    _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
-                        callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
-                }
 
-                context.Response.StatusCode = ex.StatusCode;
-                context.Response.StatusDescription = ex.StatusDescription;
-                if (ex.Message != context.Response.StatusDescription)
+                try
                 {
-                    byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
-                    context.Response.ContentEncoding = Encoding.UTF8;
-                    context.Response.ContentLength64 = buffer.Length;
-                    context.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                    context.Response.OutputStream.Flush();
-                }
+                    try
+                    {
+                        string method = context.Request.HttpMethod;
+                        IWebDavMethodHandler methodHandler;
+                        if (!_methodHandlers.TryGetValue(method, out methodHandler))
+                            throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
 
-                context.Response.Close();
-            }
-            finally
-            {
-                log4net.ThreadContext.Properties["webdav-request"] = null;
-                OnProcessRequestCompleted(context);
+                        context.Response.AppendHeader("DAV", "1,2,1#extend");
+                        methodHandler.ProcessRequest(this, context, Store, out request, out response);
+
+                        if (_log.IsDebugEnabled)
+                        {
+                            _log.DebugFormat("WEB-DAV-CALL-ENDED: {0}\r\nREQUEST HEADER\r\n{1}\r\nRESPONSE HEADER\r\n{2}\r\nrequest:{3}\r\nresponse{4}",
+                                callInfo,
+                                requestHader,
+                                context.Response.DumpHeaders(),
+                                request.Beautify(),
+                                response.Beautify());
+                        }
+                    }
+                    catch (WebDavException)
+                    {
+                        throw;
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        throw new WebDavUnauthorizedException();
+                    }
+                    catch (FileNotFoundException ex)
+                    {
+                        _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavNotFoundException("FileNotFound", innerException: ex);
+                    }
+                    catch (DirectoryNotFoundException ex)
+                    {
+                        _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavNotFoundException("DirectoryNotFound", innerException: ex);
+                    }
+                    catch (NotImplementedException ex)
+                    {
+                        _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavNotImplementedException(innerException: ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavInternalServerException(innerException: ex);
+                    }
+                }
+                catch (WebDavException ex)
+                {
+                    if (ex is WebDavNotFoundException)
+                    {
+                        //not found exception is quite common, Windows explorer often ask for files
+                        //that are not there 
+                        _log.Debug(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
+                            callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
+                    }
+                    else
+                    {
+                        _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
+                            callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
+                    }
+
+                    context.Response.StatusCode = ex.StatusCode;
+                    context.Response.StatusDescription = ex.StatusDescription;
+                    if (ex.Message != context.Response.StatusDescription)
+                    {
+                        byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
+                        context.Response.ContentEncoding = Encoding.UTF8;
+                        context.Response.ContentLength64 = buffer.Length;
+                        context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                        context.Response.OutputStream.Flush();
+                    }
+
+                    context.Response.Close();
+                }
+                finally
+                {
+                    log4net.ThreadContext.Properties["webdav-request"] = null;
+                    OnProcessRequestCompleted(context);
+                }
             }
         }
        
