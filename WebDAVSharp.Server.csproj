@@ -109,6 +109,7 @@
     <Compile Include="MethodHandlers\WebDavProppatchMethodHandler.cs" />
     <Compile Include="MethodHandlers\WebDavPutMethodHandler.cs" />
     <Compile Include="MethodHandlers\WebDavUnlockMethodHandler.cs" />
+    <Compile Include="Stores\WebDavCustomProperties.cs" />
     <Compile Include="Stores\WebDavItemInfo.cs" />
     <Compile Include="Stores\Locks\WebDavLockScope.cs" />
     <Compile Include="Stores\Locks\WebDavLockType.cs" />

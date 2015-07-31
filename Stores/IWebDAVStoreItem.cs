@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using WebDAVSharp.Server.Stores.Locks;
@@ -112,5 +113,13 @@ namespace WebDAVSharp.Server.Stores
         /// </summary>
         /// <returns></returns>
         WebDavItemInfo GetDocumentInfo();
+
+        /// <summary>
+        /// Returns all custom properties for this object, it can return null 
+        /// if this object has no custom properties.
+        /// </summary>
+        /// <returns>List of properties grouped by namespaces, if the object does not 
+        /// support custom properties it can return null.</returns>
+        List<WebDavCustomProperties> GetCustomProperties();
     }
 }

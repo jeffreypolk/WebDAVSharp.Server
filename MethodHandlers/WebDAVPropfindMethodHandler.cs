@@ -301,8 +301,11 @@ Response:
             foreach (IWebDavStoreItem webDavStoreItem in _webDavStoreItems)
             {
                 // Create the response element
+                var allCustomProperties = webDavStoreItem.GetCustomProperties();
+
                 WebDavProperty responseProperty = new WebDavProperty("response", string.Empty);
                 XmlElement responseElement = responseProperty.ToXmlElement(responseDoc);
+                //XmlElement responseElement = responseDoc.CreateElement(.....);
 
                 // The href element
                 Uri result;
@@ -329,6 +332,19 @@ Response:
                 //All properties but lockdiscovery and supportedlock can be handled here.
                 foreach (WebDavProperty davProperty in _requestedProperties.Where(d => d.Name != "lockdiscovery" && d.Name != "supportedlock"))
                     propElement.AppendChild(PropChildElement(davProperty, responseDoc, webDavStoreItem, propname));
+
+                //Custom property of the object.
+                if (allCustomProperties != null)
+                {
+                    foreach (var setOfProperties in allCustomProperties)
+                    {
+                        manager.AddNamespace(setOfProperties.NamespacePrefix, setOfProperties.Namespace);
+                        foreach (var property in setOfProperties.Properties)
+                        {
+                            propElement.AppendChild(property.ToXmlElement(responseDoc));
+                        }
+                    }
+                }
 
                 //Since lockdiscovery returns an xml tree, we need to process it seperately.
                 if (_requestedProperties.FirstOrDefault(d => d.Name == "lockdiscovery") != null)

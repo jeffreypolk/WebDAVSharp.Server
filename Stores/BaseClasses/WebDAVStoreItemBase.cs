@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Runtime.InteropServices;
 using WebDAVSharp.Server.Exceptions;
@@ -192,6 +193,15 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
                 LastAccessTime = DateTime.Now,
                 LastWriteTime = DateTime.Now,
             };
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public virtual List<WebDavCustomProperties> GetCustomProperties()
+        {
+            return null;
         }
 
         #endregion
