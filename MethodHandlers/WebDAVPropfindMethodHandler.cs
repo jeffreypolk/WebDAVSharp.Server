@@ -341,7 +341,7 @@ Response:
                         manager.AddNamespace(setOfProperties.NamespacePrefix, setOfProperties.Namespace);
                         foreach (var property in setOfProperties.Properties)
                         {
-                            propElement.AppendChild(property.ToXmlElement(responseDoc));
+                            propElement.AppendChild(property.ToXmlElement(manager, responseDoc));
                         }
                     }
                 }

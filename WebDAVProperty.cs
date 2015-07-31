@@ -151,12 +151,31 @@ namespace WebDAVSharp.Server
             // Get the prefix of the namespace
             string prefix = doc.DocumentElement.GetPrefixOfNamespace(Namespace);
 
+            return CreateElement(doc, prefix);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="namespaceManager"></param>
+        /// <param name="doc"></param>
+        /// <returns></returns>
+        public XmlElement ToXmlElement(XmlNamespaceManager namespaceManager, XmlDocument doc)
+        {
+            string prefix = namespaceManager.LookupNamespace(Namespace);
+            return CreateElement(doc, prefix);
+        }
+
+        private XmlElement CreateElement(XmlDocument doc, string prefix)
+        {
             // Create the element
             XmlElement element = doc.CreateElement(prefix, Name, Namespace);
             element.InnerText = Value;
             return element;
             // else, return XmlElement without namespace
         }
+
+     
 
         /// <summary>
         /// reates an XmlElement from the current WebDAVProperty
