@@ -161,9 +161,8 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="token"></param>
         /// <returns></returns>
-        public virtual bool Lock(string token)
+        public virtual bool Lock()
         {
             //Resource can always be locked
             return true; 

@@ -151,7 +151,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                     if (item != null)
                     {
                         //we already have an item
-                        var resourceCanBeLocked = item.Lock(Identity.Name);
+                        var resourceCanBeLocked = item.Lock();
                         if (!resourceCanBeLocked)
                         {
                             lockResult = 423; //Resource cannot be locked.
@@ -160,7 +160,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                 }
                 catch (Exception)
                 {
-                    lockResult = (int)HttpStatusCode.Created;
+                    lockResult = 423; //Resource cannot be locked some exception occurred
                 }
                 #endregion
             }

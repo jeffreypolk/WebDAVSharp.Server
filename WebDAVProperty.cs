@@ -162,7 +162,7 @@ namespace WebDAVSharp.Server
         /// <returns></returns>
         public XmlElement ToXmlElement(XmlNamespaceManager namespaceManager, XmlDocument doc)
         {
-            string prefix = namespaceManager.LookupNamespace(Namespace);
+            string prefix = namespaceManager.LookupPrefix(Namespace);
             return CreateElement(doc, prefix);
         }
 
