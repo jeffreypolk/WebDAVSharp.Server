@@ -77,7 +77,7 @@ namespace WebDAVSharp.Server
         /// <summary>
         /// Logging Interface
         /// </summary>
-        public  static ILog Log
+        public static ILog Log
         {
             get
             {
@@ -221,7 +221,7 @@ namespace WebDAVSharp.Server
                     methodHandler
                 };
             _methodHandlers = handlersWithNames.ToDictionary(v => v.name, v => v.methodHandler);
-            }
+        }
 
         #endregion
 
@@ -252,16 +252,16 @@ namespace WebDAVSharp.Server
         /// <exception cref="ObjectDisposedException">This <see cref="WebDavServer" /> instance has been disposed of.</exception>
         /// <exception cref="InvalidOperationException">The server is already running.</exception>
         public void Start(String url)
-            {
+        {
             Listener.Prefixes.Add(url);
             EnsureNotDisposed();
             lock (_threadLock)
-                {
+            {
                 if (_thread != null)
-                    {
+                {
                     throw new InvalidOperationException(
                         "This WebDAVServer instance is already running, call to Start is invalid at this point");
-                    }
+                }
 
                 _stopEvent = new ManualResetEvent(false);
 
@@ -288,10 +288,10 @@ namespace WebDAVSharp.Server
             lock (_threadLock)
             {
                 if (_thread == null)
-                    {
+                {
                     throw new InvalidOperationException(
                         "This WebDAVServer instance is not running, call to Stop is invalid at this point");
-                    }
+                }
 
                 _stopEvent.Set();
                 _thread.Join();
@@ -327,9 +327,15 @@ namespace WebDAVSharp.Server
                         return;
                     }
                     _log.DebugFormat("Queued Context request: {0}", context.Request.HttpMethod);
-                    
+
                     ThreadPool.QueueUserWorkItem(ProcessRequest, context);
                 }
+            }
+            catch (Exception ex)
+            {
+                //This error occours if we are not able to queue a request, the whole webdav server
+                //is terminating.
+                _log.Error(String.Format("Web dav ended unexpectedly with error {0}", ex.Message) , ex);
             }
             finally
             {
@@ -343,9 +349,9 @@ namespace WebDAVSharp.Server
         /// check or whatever the real implementation need to do.
         /// </summary>
         /// <param name="context"></param>
-        protected virtual void OnProcessRequestStarted(IHttpListenerContext context) 
+        protected virtual void OnProcessRequestStarted(IHttpListenerContext context)
         {
-        
+
         }
 
         /// <summary>
@@ -475,7 +481,7 @@ namespace WebDAVSharp.Server
                 }
             }
         }
-       
+
 
         #endregion
     }
