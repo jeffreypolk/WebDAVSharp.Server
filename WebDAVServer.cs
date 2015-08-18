@@ -461,18 +461,7 @@ namespace WebDAVSharp.Server
                             callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
                     }
 
-                    context.Response.StatusCode = ex.StatusCode;
-                    context.Response.StatusDescription = ex.StatusDescription;
-                    if (ex.Message != context.Response.StatusDescription)
-                    {
-                        byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
-                        context.Response.ContentEncoding = Encoding.UTF8;
-                        context.Response.ContentLength64 = buffer.Length;
-                        context.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                        context.Response.OutputStream.Flush();
-                    }
-
-                    context.Response.Close();
+                    SendResponseForException(context, ex);
                 }
                 finally
                 {
@@ -480,6 +469,30 @@ namespace WebDAVSharp.Server
                     OnProcessRequestCompleted(context);
                 }
             }
+        }
+
+        private void SendResponseForException(IHttpListenerContext context, WebDavException ex)
+        {
+            try
+            {
+                context.Response.StatusCode = ex.StatusCode;
+                context.Response.StatusDescription = ex.StatusDescription;
+                if (ex.Message != context.Response.StatusDescription)
+                {
+                    byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
+                    context.Response.ContentEncoding = Encoding.UTF8;
+                    context.Response.ContentLength64 = buffer.Length;
+                    context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                    context.Response.OutputStream.Flush();
+                }
+
+                context.Response.Close();
+            }
+            catch (Exception innerEx)
+            {
+                _log.Error("Unable to send response for exception: " + innerEx.Message, innerEx);
+            }
+           
         }
 
 
