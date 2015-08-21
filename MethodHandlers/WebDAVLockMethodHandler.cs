@@ -57,12 +57,12 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavPreconditionFailedException"></exception>
         /// <param name="response"></param>
         /// <param name="request"></param>
-         protected override void OnProcessRequest(
-           WebDavServer server,
-           IHttpListenerContext context,
-           IWebDavStore store,
-           XmlDocument request,
-           XmlDocument response)
+        protected override void OnProcessRequest(
+          WebDavServer server,
+          IHttpListenerContext context,
+          IWebDavStore store,
+          XmlDocument request,
+          XmlDocument response)
         {
 
             /***************************************************************************************************
@@ -73,7 +73,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             int depth = GetDepthHeader(context.Request);
             string timeout = GetTimeoutHeader(context.Request);
             string locktoken = GetLockTokenIfHeader(context.Request);
-            int lockResult;
+            int lockResult = 0;
             // Initiate the XmlNamespaceManager and the XmlNodes
             XmlNamespaceManager manager;
             XmlNode lockscopeNode, locktypeNode, ownerNode;
@@ -81,6 +81,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             if (string.IsNullOrEmpty(locktoken))
             {
                 #region New Lock
+
                 // try to read the body
                 try
                 {
@@ -94,7 +95,7 @@ namespace WebDAVSharp.Server.MethodHandlers
 
                         if (request.DocumentElement != null &&
                             request.DocumentElement.LocalName != "prop" &&
-                        request.DocumentElement.LocalName != "lockinfo")
+                            request.DocumentElement.LocalName != "lockinfo")
                         {
                             WebDavServer.Log.Debug("LOCK method without prop or lockinfo element in xml document");
                         }
@@ -135,31 +136,46 @@ namespace WebDAVSharp.Server.MethodHandlers
                     : WebDavLockScope.Shared;
 
                 //Only lock available at this time is a Write Lock according to RFC
-                WebDavLockType locktype = (locktypeNode.InnerXml.StartsWith("<D:write")) ? WebDavLockType.Write : WebDavLockType.Write;
+                WebDavLockType locktype = (locktypeNode.InnerXml.StartsWith("<D:write"))
+                    ? WebDavLockType.Write
+                    : WebDavLockType.Write;
 
-                string lockuser = ownerNode.InnerText;
+                string userAgent = context.Request.Headers["User-Agent"];
 
                 WindowsIdentity Identity = (WindowsIdentity)Thread.GetData(Thread.GetNamedDataSlot(WebDavServer.HttpUser));
-
-                lockResult = WebDavStoreItemLock.Lock(context.Request.Url, lockscope, locktype, Identity.Name, ref timeout,
-                    out locktoken, request, depth);
 
                 // Get the item from the collection
                 try
                 {
                     var item = GetItemFromCollection(collection, context.Request.Url);
+                    String lockLogicalKey = context.Request.Url.AbsoluteUri;
                     if (item != null)
                     {
-                        //we already have an item
-                        var resourceCanBeLocked = item.Lock();
-                        if (!resourceCanBeLocked)
-                        {
-                            lockResult = 423; //Resource cannot be locked.
-                        }
+                        lockLogicalKey = item.LockLogicalKey;
+                    }
+                    if (item != null && !item.Lock())
+                    {
+                        lockResult = 423; //Resource cannot be locked
+                    }
+                    else
+                    {
+                        //try acquiring a standard lock, 
+                        lockResult = WebDavStoreItemLock.Lock(
+                            context.Request.Url, 
+                            lockLogicalKey,
+                            lockscope, 
+                            locktype, 
+                            Identity.Name, 
+                            userAgent,
+                            ref timeout, 
+                            out locktoken, 
+                            request, 
+                            depth);
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    WebDavServer._log.Error(String.Format("Error occourred while acquiring lock {0}", context.Request.Url), ex);
                     lockResult = 423; //Resource cannot be locked some exception occurred
                 }
                 #endregion

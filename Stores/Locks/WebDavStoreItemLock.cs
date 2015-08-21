@@ -95,16 +95,27 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// Locks the request Path.
         /// </summary>
         /// <param name="path">URI to the item to be locked</param>
+        /// <param name="logicalLockKey">Logical lock key taken from document.</param>
         /// <param name="lockscope">The lock Scope used for locking</param>
         /// <param name="locktype">The lock Type used for locking</param>
         /// <param name="lockowner">The owner of the lock</param>
+        /// <param name="userAgent">User agent of the request</param>
         /// <param name="requestedlocktimeout">The requested timeout</param>
         /// <param name="locktoken">Out parameter, returns the issued token</param>
         /// <param name="requestDocument">the Request Document</param>
         /// <param name="depth">How deep to lock, 0,1, or infinity</param>
         /// <returns></returns>
-        public static int Lock(Uri path, WebDavLockScope lockscope, WebDavLockType locktype, string lockowner,
-            ref string requestedlocktimeout, out string locktoken, XmlDocument requestDocument, int depth)
+        public static int Lock(
+            Uri path, 
+            String logicalLockKey, 
+            WebDavLockScope lockscope, 
+            WebDavLockType locktype, 
+            string lockowner,
+            String userAgent,
+            ref string requestedlocktimeout, 
+            out string locktoken, 
+            XmlDocument requestDocument, 
+            int depth)
         {
             CleanLocks(path);
             WebDavServer.Log.Debug("Lock Requested Timeout:" + requestedlocktimeout);
@@ -125,12 +136,30 @@ namespace WebDAVSharp.Server.Stores.Locks
 
 
                 //if ObjectLocks doesn't contain the path, then this is a new lock and regardless
-                //of whether it is Exclusive or Shared it is successful.
                 if (!ObjectLocks.ContainsKey(path))
                 {
+                    //Pay attention, we could have a lock in other path with the very same logical key.
+                    var logicalKeyLocks = ObjectLocks.Values
+                        .SelectMany(l => l)
+                        .Where(l => 
+                            l.LogicalLockKey == logicalLockKey && 
+                            l.Owner != lockowner &&
+                            l.UserAgent != userAgent)
+                        .ToList();
+                    if (logicalKeyLocks.Count > 0)
+                    {
+                        //we have some logical lock from different user, if we request exclusive, fail
+                        if (lockscope == WebDavLockScope.Exclusive) 
+                            return 423;
+
+                        //if lock requested is shared, but anyone of the other has an Exclusive lock fail
+                        if (lockscope == WebDavLockScope.Shared &&
+                            logicalKeyLocks.Any(l => l.LockScope == WebDavLockScope.Exclusive))
+                            return 423;
+                    }
                     ObjectLocks.Add(path, new List<WebDaveStoreItemLockInstance>());
 
-                    ObjectLocks[path].Add(new WebDaveStoreItemLockInstance(path, lockscope, locktype, lockowner,
+                    ObjectLocks[path].Add(new WebDaveStoreItemLockInstance(path,logicalLockKey, userAgent, lockscope, locktype, lockowner,
                         ref requestedlocktimeout, ref locktoken,
                         requestDocument, depth));
 
@@ -146,10 +175,13 @@ namespace WebDAVSharp.Server.Stores.Locks
                     //TODO: Verify, it seems that the windows client issues multiple lock, if the
                     //lock was already issued to the same identity, we can consider the lock to 
                     //be a refresh.
-                    if (ObjectLocks[path].All(l => l.Owner == lockowner))
+                    //Check on useragent is needed to verify that the tool is the very same
+                    //TODO: we should also check from IP address of caller to be 100% sure.
+                    if (ObjectLocks[path].All(l => l.Owner == lockowner && l.UserAgent == userAgent))
                     {
                         //the same owner requested a lock it it should not happen but windows client
-                        //does so
+                        //issues multiple lock without issuing a UNLOCK (this happens when it issued a DELETE 
+                        //probably it assumes that a DELETE also release the LOCK).
                         ObjectLocks[path].Clear(); //clear all old lock, 
                     }
                     else
@@ -174,7 +206,7 @@ namespace WebDAVSharp.Server.Stores.Locks
 
                 #region Create New Lock
 
-                ObjectLocks[path].Add(new WebDaveStoreItemLockInstance(path, lockscope, locktype, lockowner,
+                ObjectLocks[path].Add(new WebDaveStoreItemLockInstance(path, logicalLockKey, userAgent, lockscope, locktype, lockowner,
                     ref requestedlocktimeout, ref locktoken,
                     requestDocument, depth));
 

@@ -94,6 +94,12 @@ namespace WebDAVSharp.Server.Stores
         }
 
         /// <summary>
+        /// Return logical lock key for items, useful if you are using virtual
+        /// folder where a document can be located in different paths.
+        /// </summary>
+        string LockLogicalKey { get; }
+
+        /// <summary>
         /// Try to lock the resource
         /// </summary>
         /// <returns>True if the resource is locked, false if the resource was

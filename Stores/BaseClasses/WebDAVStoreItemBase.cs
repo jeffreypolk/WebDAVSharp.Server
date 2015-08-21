@@ -130,6 +130,14 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
             }
         }
 
+        /// <summary>
+        /// Standard Lock Logical Key is the path of the document.
+        /// </summary>
+        public virtual string LockLogicalKey
+        {
+            get { return ItemPath; }
+        }
+
         #endregion
 
         #region Functions

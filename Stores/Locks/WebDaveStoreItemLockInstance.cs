@@ -86,6 +86,28 @@ namespace WebDAVSharp.Server.Stores.Locks
         }
 
         /// <summary>
+        /// Same document can be returned from different path on webdav if you 
+        /// use virtual folders, if you use virtual folders you need to return
+        /// the same LogicalLockKey for all documents that represents the same document
+        /// </summary>
+        public String LogicalLockKey
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// The user agent that requested the lock.
+        /// </summary>
+        public String UserAgent
+        {
+            get;
+            private set;
+        }
+
+
+
+        /// <summary>
         /// 
         /// </summary>
         public int Depth
@@ -98,6 +120,8 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// 
         /// </summary>
         /// <param name="path"></param>
+        /// <param name="logicalLockKey"></param>
+        /// <param name="userAgent"></param>
         /// <param name="lockscope"></param>
         /// <param name="locktype"></param>
         /// <param name="owner"></param>
@@ -105,9 +129,21 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// <param name="token"></param>
         /// <param name="requestdocument"></param>
         /// <param name="depth"></param>
-        public WebDaveStoreItemLockInstance(Uri path, WebDavLockScope lockscope, WebDavLockType locktype, string owner, ref string requestedlocktimeout, ref string token, XmlDocument requestdocument, int depth)
+        public WebDaveStoreItemLockInstance(
+            Uri path, 
+            String logicalLockKey,
+            String userAgent,
+            WebDavLockScope lockscope,
+            WebDavLockType locktype, 
+            string owner, 
+            ref string requestedlocktimeout, 
+            ref string token, 
+            XmlDocument requestdocument, 
+            int depth)
         {
             Path = path;
+            LogicalLockKey = logicalLockKey;
+            UserAgent = userAgent;
             LockScope = lockscope;
             LockType = locktype;
             Owner = owner;
