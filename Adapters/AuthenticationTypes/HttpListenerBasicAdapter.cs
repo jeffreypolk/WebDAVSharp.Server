@@ -6,6 +6,7 @@ using System.Security;
 using System.Security.Principal;
 using System.Threading;
 using Microsoft.Win32.SafeHandles;
+using System.DirectoryServices.AccountManagement;
 
 namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
 {
@@ -74,13 +75,43 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
 
         public IIdentity GetIdentity(IHttpListenerContext context)
         {
-            HttpListenerBasicIdentity ident = (HttpListenerBasicIdentity)context.AdaptedInstance.User.Identity;
-            string domain = ident.Name.Split('\\')[0];
-            string username = ident.Name.Split('\\')[1];
-            var token = GetToken(domain, username, ident.Password);
-            return new WindowsIdentity(token.DangerousGetHandle());
+            try
+            {
+                HttpListenerBasicIdentity ident = (HttpListenerBasicIdentity)context.AdaptedInstance.User.Identity;
+                var isDomainUser = ident.Name.Contains("\\");
+                var user = ident.Name;
+                var pwd = ident.Password;
+                if (isDomainUser)
+                {
+                    return AuthenticateOnSpecificDomain(user, pwd);
+                }
+                else
+                {
+                    using (PrincipalContext authContext = new PrincipalContext(ContextType.Domain))
+                    {
+                        if (authContext.ValidateCredentials(user, pwd))
+                        {
+                            return new GenericIdentity(user);
+                        }
+                    }
+                }
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+
         }
 
+        private static IIdentity AuthenticateOnSpecificDomain(string user, string pwd)
+        {
+            var splitted = user.Split('\\');
+            string domain = splitted[0];
+            string username = splitted[1];
+            var token = GetToken(domain, username, pwd);
+            return new WindowsIdentity(token.DangerousGetHandle());
+        }
 
 
         internal static SafeTokenHandle GetToken(string domainName,
