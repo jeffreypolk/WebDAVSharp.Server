@@ -81,18 +81,33 @@ namespace WebDAVSharp.Server
                 return new Uri(exactPrefix);
             }
 
-            string wildcardUrl = new UriBuilder(uri) { Host = "WebDAVSharpSpecialHostTag" }
-                .ToString().Replace("WebDAVSharpSpecialHostTag", "*");
+            Uri wildcardPrefix = GetPrefixWithWildCard(uri, server);
 
-            string wildcardPrefix = server.Listener.Prefixes
-                .FirstOrDefault(item => wildcardUrl.StartsWith(item, StringComparison.OrdinalIgnoreCase));
-
-            if (!string.IsNullOrEmpty(wildcardPrefix))
+            if (wildcardPrefix != null)
             {
-                return new Uri(wildcardPrefix.Replace("://*", string.Format("://{0}", uri.Host)));
+                return wildcardPrefix;
             }
-           
+
             throw new WebDavInternalServerException("Unable to find correct server root");
+        }
+
+        private static String[] AllIpWildChards = new[] { "*", "+" };
+
+        private static Uri GetPrefixWithWildCard(Uri uri, WebDavServer server)
+        {
+            foreach (var wc in AllIpWildChards)
+            {
+                string wildcardUrl = new UriBuilder(uri) { Host = "WebDAVSharpSpecialHostTag" }
+               .ToString().Replace("WebDAVSharpSpecialHostTag", wc);
+
+                string wildcardPrefix = server.Listener.Prefixes
+                    .FirstOrDefault(item => wildcardUrl.StartsWith(item, StringComparison.OrdinalIgnoreCase));
+                if (!String.IsNullOrEmpty(wildcardPrefix))
+                {
+                    return new Uri(wildcardPrefix.Replace("://" + wc, string.Format("://{0}", uri.Host)));
+                } 
+            }
+            return null;
         }
 
         /// <summary>
