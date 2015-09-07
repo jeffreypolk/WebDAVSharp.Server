@@ -79,6 +79,7 @@
   <ItemGroup>
     <Compile Include="Adapters\AuthenticationTypes\HttpListenerAnyonymousAdapter.cs" />
     <Compile Include="Adapters\AuthenticationTypes\HttpListenerBasicAdapter.cs" />
+    <Compile Include="Adapters\AuthenticationTypes\HttpListenerNegotiateWithBasicFallback.cs" />
     <Compile Include="Adapters\HttpListenerContextAdapter.cs" />
     <Compile Include="Adapters\HttpListenerRequestAdapter.cs" />
     <Compile Include="Adapters\HttpListenerResponseAdapter.cs" />

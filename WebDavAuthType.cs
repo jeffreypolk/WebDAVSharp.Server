@@ -23,6 +23,12 @@ namespace WebDAVSharp.Server
         /// <summary>
         /// Anonymous
         /// </summary>
-        Anonymous
+        Anonymous,
+        /// <summary>
+        /// Combine both negotiate and basic, if the connection
+        /// does not come from an authenticated client it fallback
+        /// on basic authentication.
+        /// </summary>
+        NegotiateAndBasic,
     }
 }

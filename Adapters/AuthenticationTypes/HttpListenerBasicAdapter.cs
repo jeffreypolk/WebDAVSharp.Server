@@ -104,7 +104,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
 
         }
 
-        private static IIdentity AuthenticateOnSpecificDomain(string user, string pwd)
+        internal static IIdentity AuthenticateOnSpecificDomain(string user, string pwd)
         {
             var splitted = user.Split('\\');
             string domain = splitted[0];
