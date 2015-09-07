@@ -69,6 +69,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
         private AuthenticationSchemes AuthSchemeSelector(HttpListenerRequest httpRequest)
         {
             return AuthenticationSchemes.Negotiate | AuthenticationSchemes.Basic;
+            //return AuthenticationSchemes.Negotiate;
         }
 
         #endregion

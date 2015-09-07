@@ -357,6 +357,18 @@ namespace WebDAVSharp.Server
         }
 
         /// <summary>
+        /// Give to derived class the option to do further filtering of users. Even
+        /// if user authentication went good at protocol level (NTLM, Basic, Etc) 
+        /// we can still throw an unhautorized exception.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        protected virtual Boolean OnValidateUser(IHttpListenerContext context)
+        {
+            return true; //Default return value, user is always valid.
+        }
+
+        /// <summary>
         /// Called after everything was processed, it can be used for doing specific
         /// cleanup for the real implementation.
         /// </summary>
@@ -407,6 +419,10 @@ namespace WebDAVSharp.Server
                             throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
 
                         context.Response.AppendHeader("DAV", "1,2,1#extend");
+                        if (!OnValidateUser(context))
+                        {
+                            throw new WebDavUnauthorizedException();
+                        }
                         methodHandler.ProcessRequest(this, context, Store, out request, out response);
 
                         if (_log.IsDebugEnabled)
