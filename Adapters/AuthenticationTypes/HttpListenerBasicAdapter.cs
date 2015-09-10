@@ -87,13 +87,20 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
                 }
                 else
                 {
-                    using (PrincipalContext authContext = new PrincipalContext(ContextType.Domain))
+                    try
                     {
-                        if (authContext.ValidateCredentials(user, pwd))
+                        using (PrincipalContext authContext = new PrincipalContext(ContextType.Domain))
                         {
-                            return new GenericIdentity(user);
+                            if (authContext.ValidateCredentials(user, pwd))
+                            {
+                                return new GenericIdentity(user);
+                            }
                         }
                     }
+                    catch (PrincipalException)
+                    {
+                    }
+                   
                 }
                 return null;
             }
