@@ -28,7 +28,10 @@ namespace WebDAVSharp.Server
         /// Combine both negotiate and basic, if the connection
         /// does not come from an authenticated client it fallback
         /// on basic authentication.
+        /// It check current user, if it is system or network service
+        /// it can use keberos (negotiate) if not it will support only
+        /// NTLM and Windows Auth.
         /// </summary>
-        NegotiateAndBasic,
+        Smart,
     }
 }

@@ -140,8 +140,8 @@ namespace WebDAVSharp.Server
                 case AuthType.Anonymous:
                     _listener = new HttpListenerAnyonymousAdapter();
                     break;
-                case AuthType.NegotiateAndBasic:
-                    _listener = new HttpListenerNegotiateWithBasicFallback();
+                case AuthType.Smart:
+                    _listener = new HttpListenerSmartAdapter();
                     break;
             }
             methodHandlers = methodHandlers ?? WebDavMethodHandlers.BuiltIn;

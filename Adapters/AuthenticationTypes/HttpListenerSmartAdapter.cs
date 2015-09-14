@@ -10,10 +10,25 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
     /// This version uses integrated authentication if present,
     /// but if the auth is not good it can fallback on a basic
     /// authentication scheme.
+    /// 
+    /// Please check the answer to this post
+    /// 
+    /// https://social.msdn.microsoft.com/Forums/en-US/c2ba1e1c-3ff8-4c74-874e-2de2bcb1a4c1/httplistener-windows-authentication-fails-for-domain-account?forum=netfxnetcom
+    /// 
+    /// Negotiate can be used only if the service is running as a 
+    /// network service or local system. If this condition is not 
+    /// fulfilled, windows or other client that supports kerberos will try
+    /// to authenticate with kerberos and the auth will always fail.
+    /// 
+    /// To diagnose this issue, use fiddler and check auth header
+    /// if it starts with YII it is a kerberos auth, and will always fail
+    /// until the code run as a service with local system or network service
+    /// identity.
+    /// Authorization: Negotiate YIIGDQYGKwYBB
     /// <see cref="IHttpListener" /> implementation wraps around a
     /// <see cref="HttpListener" /> instance.
     /// </summary>
-    internal sealed class HttpListenerNegotiateWithBasicFallback : WebDavDisposableBase, IHttpListener, IAdapter<HttpListener>
+    internal sealed class HttpListenerSmartAdapter : WebDavDisposableBase, IHttpListener, IAdapter<HttpListener>
     {
         #region Private Variables
 
@@ -49,18 +64,39 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
                 return _listener.Prefixes;
             }
         }
+
+        private Boolean _canSupportKerberos;
+        private AuthenticationSchemes _supportedAuthScheme;
+
         #endregion
 
         #region Constructor
+
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpListenerNegotiateAdapter" /> class.
         /// </summary>
-        internal HttpListenerNegotiateWithBasicFallback()
+        internal HttpListenerSmartAdapter()
         {
+            var currentIdentity = WindowsIdentity.GetCurrent();
+            if (currentIdentity.Name.StartsWith("NT AUTHORITY\\"))
+            {
+                WebDavServer.Log.Info("WebDav: SmartAdapter is used with Kerberos Support");
+                _supportedAuthScheme = AuthenticationSchemes.Negotiate | AuthenticationSchemes.Basic;
+                _canSupportKerberos = true;
+            }
+            else
+            {
+                WebDavServer.Log.InfoFormat(
+@"WebDav: SmartAdapter is used WITHOUT Kerberos Support because user is {0}\n
+Kerberos can be only used with Local system or Network Service. NTLM will be used.", currentIdentity.Name);
+                _supportedAuthScheme = AuthenticationSchemes.Ntlm | AuthenticationSchemes.IntegratedWindowsAuthentication | AuthenticationSchemes.Basic;
+                
+                _canSupportKerberos = false;
+            }
+            WebDavServer.Log.DebugFormat("_canSupportKerberos is {0}", _canSupportKerberos);
             _listener = new HttpListener
             {
-                AuthenticationSchemes = AuthenticationSchemes.Negotiate |
-                    AuthenticationSchemes.Basic,
+                AuthenticationSchemes = _supportedAuthScheme,
                 UnsafeConnectionNtlmAuthentication = false
             };
             _listener.AuthenticationSchemeSelectorDelegate = new AuthenticationSchemeSelector(AuthSchemeSelector);
@@ -68,8 +104,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
 
         private AuthenticationSchemes AuthSchemeSelector(HttpListenerRequest httpRequest)
         {
-            return AuthenticationSchemes.Negotiate | AuthenticationSchemes.Basic;
-            //return AuthenticationSchemes.Negotiate;
+            return _supportedAuthScheme;
         }
 
         #endregion
