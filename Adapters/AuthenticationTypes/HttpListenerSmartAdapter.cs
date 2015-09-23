@@ -89,7 +89,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
                 WebDavServer.Log.InfoFormat(
 @"WebDav: SmartAdapter is used WITHOUT Kerberos Support because user is {0}\n
 Kerberos can be only used with Local system or Network Service. NTLM will be used.", currentIdentity.Name);
-                _supportedAuthScheme = AuthenticationSchemes.Ntlm | AuthenticationSchemes.IntegratedWindowsAuthentication | AuthenticationSchemes.Basic;
+                _supportedAuthScheme = AuthenticationSchemes.Ntlm | AuthenticationSchemes.Basic;
                 
                 _canSupportKerberos = false;
             }
