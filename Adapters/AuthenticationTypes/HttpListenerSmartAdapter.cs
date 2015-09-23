@@ -97,8 +97,19 @@ Kerberos can be only used with Local system or Network Service. NTLM will be use
             _listener = new HttpListener
             {
                 AuthenticationSchemes = _supportedAuthScheme,
-                UnsafeConnectionNtlmAuthentication = false
+                UnsafeConnectionNtlmAuthentication = false,
             };
+
+            //***********************************************************************************
+            // If you use UnsafeConnectionNtlmAuthentication you are allowing to the client
+            // to avoid NTLM handshake for each request, this permits to cyberduck or carotdav
+            // to work uploading files. If this is not true it is pratically impossible to upload
+            // sequence of files.
+            //***********************************************************************************
+            _listener.UnsafeConnectionNtlmAuthentication = true;
+
+
+
             _listener.AuthenticationSchemeSelectorDelegate = new AuthenticationSchemeSelector(AuthSchemeSelector);
         }
 
