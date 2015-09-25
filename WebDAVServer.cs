@@ -495,15 +495,17 @@ namespace WebDAVSharp.Server
             {
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;
-                if (ex.Message != context.Response.StatusDescription)
+                if (!(context.Request.HttpMethod == "HEAD"))
                 {
-                    byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
-                    context.Response.ContentEncoding = Encoding.UTF8;
-                    context.Response.ContentLength64 = buffer.Length;
-                    context.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                    context.Response.OutputStream.Flush();
+                    if (ex.Message != context.Response.StatusDescription)
+                    {
+                        byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
+                        context.Response.ContentEncoding = Encoding.UTF8;
+                        context.Response.ContentLength64 = buffer.Length;
+                        context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                        context.Response.OutputStream.Flush();
+                    }
                 }
-
                 context.Response.Close();
             }
             catch (Exception innerEx)
