@@ -26,7 +26,7 @@ namespace WebDAVSharp.Server.MethodHandlers
 
         private Uri _requestUri;
         private List<WebDavProperty> _requestedProperties;
-        private List<IWebDavStoreItem> _webDavStoreItems;
+        private IEnumerable<IWebDavStoreItem> _webDavStoreItems;
 
         private static List<WebDavProperty> _list = new List<WebDavProperty>
             {
@@ -198,9 +198,9 @@ Response:
         /// A <see cref="List{T}" /> of <see cref="IWebDavStoreItem" />
         /// </returns>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavConflictException"></exception>
-        private List<IWebDavStoreItem> GetWebDavStoreItems(IWebDavStoreItem iWebDavStoreItem, int depth)
+        private HashSet<IWebDavStoreItem> GetWebDavStoreItems(IWebDavStoreItem iWebDavStoreItem, int depth)
         {
-            List<IWebDavStoreItem> list = new List<IWebDavStoreItem>();
+            HashSet<IWebDavStoreItem> list = new HashSet<IWebDavStoreItem>();
 
             //IWebDavStoreCollection
             // if the item is a collection
@@ -211,8 +211,10 @@ Response:
                 if (depth == 0)
                     return list;
 
-                foreach (IWebDavStoreItem item in collection.Items.Where(item => !list.Contains(item)))
-                        list.Add(item);
+                foreach (var item in collection.Items)
+                {
+                    list.Add(item);
+                }
 
                 return list;
             }
