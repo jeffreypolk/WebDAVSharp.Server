@@ -12,7 +12,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     {
         #region Variables
 
-        private static readonly List<string> verbsAllowed = new List<string> { "OPTIONS", "TRACE", "GET", "HEAD", "POST", "COPY", "PROPFIND", "LOCK", "UNLOCK" };
+        private static readonly List<string> verbsAllowed = new List<string> { "OPTIONS", "TRACE", "GET", "HEAD", "POST", "COPY", "PROPFIND", "LOCK", "UNLOCK", "PUT", "DELETE", "MOVE", "MKCOL" };
 
         private static readonly List<string> verbsPublic = new List<string> { "OPTIONS", "GET", "HEAD", "PROPFIND", "PROPPATCH", "MKCOL", "PUT", "DELETE", "COPY", "MOVE", "LOCK", "UNLOCK" };
 
@@ -54,7 +54,6 @@ namespace WebDAVSharp.Server.MethodHandlers
            XmlDocument request,
            XmlDocument response)
         {
-
             foreach (string verb in verbsAllowed)
                 context.Response.AppendHeader("Allow", verb);
 
