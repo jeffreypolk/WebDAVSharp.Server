@@ -5,6 +5,7 @@ using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
+using WebDAVSharp.Server.Stores.Locks;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
@@ -60,7 +61,6 @@ namespace WebDAVSharp.Server.MethodHandlers
            XmlDocument response)
         {
             // Get the parent collection of the item
-
             IWebDavStoreCollection collection;
             IWebDavStoreItem item = null;
             //PATCH: Cyberduck and some windows ask HEAD of the root, and it was not supported.

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Xml;
 using WebDAVSharp.Server.Adapters;
+using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
 using WebDAVSharp.Server.Stores.Locks;
 
@@ -57,6 +58,8 @@ namespace WebDAVSharp.Server.MethodHandlers
            XmlDocument request,
            XmlDocument response)
         {
+            if (!WebDavStoreItemLock.LockEnabled) throw new WebDavNotImplementedException("Lock support disabled");
+
             /***************************************************************************************************
             * Send the response
             ***************************************************************************************************/

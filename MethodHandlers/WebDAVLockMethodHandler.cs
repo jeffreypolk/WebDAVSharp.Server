@@ -65,6 +65,7 @@ namespace WebDAVSharp.Server.MethodHandlers
           XmlDocument response)
         {
 
+            if (!WebDavStoreItemLock.LockEnabled) throw new WebDavNotImplementedException("Lock support disabled");
             /***************************************************************************************************
              * Retreive al the information from the request
              ***************************************************************************************************/

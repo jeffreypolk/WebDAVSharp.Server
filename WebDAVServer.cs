@@ -41,6 +41,11 @@ namespace WebDAVSharp.Server
 
         private Thread _thread;
 
+        private const string DavHeaderVersion1And3 = "1, 3, extended-mkcol";
+        private const string DavHeaderVersion1_2_and1Extended = "1,2,1#extend";
+
+        private string _davHader = DavHeaderVersion1_2_and1Extended;
+
         #endregion
 
         #region Properties
@@ -61,6 +66,21 @@ namespace WebDAVSharp.Server
         }
 
         /// <summary>
+        /// Allow users to have Indefinite Locks
+        /// </summary>
+        public bool LockEnabled
+        {
+            get
+            {
+                return WebDavStoreItemLock.LockEnabled;
+            }
+            set
+            {
+                WebDavStoreItemLock.LockEnabled = value;
+            }
+        }
+
+        /// <summary>
         /// The maximum number of seconds a person can check an item out for.
         /// </summary>
         public long MaxCheckOutSeconds
@@ -74,6 +94,7 @@ namespace WebDAVSharp.Server
                 WebDavStoreItemLock.MaxCheckOutSeconds = value;
             }
         }
+
         /// <summary>
         /// Logging Interface
         /// </summary>
@@ -418,7 +439,7 @@ namespace WebDAVSharp.Server
                         if (!_methodHandlers.TryGetValue(method, out methodHandler))
                             throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
 
-                        context.Response.AppendHeader("DAV", "1,2,1#extend");
+                        context.Response.AppendHeader("DAV", _davHader);
                         if (!OnValidateUser(context))
                         {
                             throw new WebDavUnauthorizedException();

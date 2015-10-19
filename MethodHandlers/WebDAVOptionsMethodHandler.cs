@@ -2,6 +2,10 @@ using System.Collections.Generic;
 using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Stores;
+using System.Linq;
+using WebDAVSharp.Server.Stores.Locks;
+using System.Net;
+using WebDAVSharp.Server.Exceptions;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
@@ -12,7 +16,12 @@ namespace WebDAVSharp.Server.MethodHandlers
     {
         #region Variables
 
-        private static readonly List<string> verbsAllowed = new List<string> { "OPTIONS", "TRACE", "GET", "HEAD", "POST", "COPY", "PROPFIND", "LOCK", "UNLOCK", "PUT", "DELETE", "MOVE", "MKCOL" };
+        //Original list of allowed verbs 
+        //private static readonly List<string> verbsAllowed = new List<string> { "OPTIONS", "TRACE", "GET", "HEAD", "POST", "COPY", "PROPFIND", "LOCK", "UNLOCK", "PUT", "DELETE", "MOVE", "MKCOL" };
+
+        //private static readonly List<string> verbsAllowed = new List<string> { "GET", "POST", "OPTIONS", "HEAD", "MKCOL", "PUT", "PROPFIND", "PROPPATCH", "DELETE", "MOVE", "COPY", "GETLIB", "LOCK", "UNLOCK" };
+
+        private static readonly List<string> verbsAllowed = new List<string> { "OPTIONS", "GET", "HEAD", "DELETE", "PROPFIND", "PUT", "PROPPATCH", "COPY", "DELETE", "MOVE", "MKCOL" };
 
         private static readonly List<string> verbsPublic = new List<string> { "OPTIONS", "GET", "HEAD", "PROPFIND", "PROPPATCH", "MKCOL", "PUT", "DELETE", "COPY", "MOVE", "LOCK", "UNLOCK" };
 
@@ -54,11 +63,22 @@ namespace WebDAVSharp.Server.MethodHandlers
            XmlDocument request,
            XmlDocument response)
         {
-            foreach (string verb in verbsAllowed)
-                context.Response.AppendHeader("Allow", verb);
 
-            foreach (string verb in verbsPublic)
-                context.Response.AppendHeader("Public", verb);
+            var baseVerbs = verbsAllowed.Aggregate((s1, s2) => s1 + ", " + s2);
+            
+
+            if (WebDavStoreItemLock.LockEnabled)
+            {
+                baseVerbs += ", LOCK, UNLOCK";
+            }
+            context.Response.AppendHeader("Content-Type", "text /html; charset=UTF-8");
+            context.Response.AppendHeader("Allow", baseVerbs);
+
+            //foreach (string verb in verbsAllowed)
+            //    context.Response.AppendHeader("Allow", verb);
+
+            //foreach (string verb in verbsPublic)
+            //    context.Response.AppendHeader("Public", verb);
 
             // Sends 200 OK
             context.SendSimpleResponse();

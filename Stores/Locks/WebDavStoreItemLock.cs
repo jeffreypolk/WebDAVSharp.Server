@@ -25,6 +25,11 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// Max amount of seconds a item can be checkout for.
         /// </summary>
         internal static long MaxCheckOutSeconds = long.MaxValue;
+    
+        /// <summary>
+        /// If false, web dav tells client that it does not support lock.
+        /// </summary>
+        internal static Boolean LockEnabled = true;
 
         /// <summary>
         /// Used to store the locks per URI
