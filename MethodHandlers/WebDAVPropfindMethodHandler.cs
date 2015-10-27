@@ -100,7 +100,8 @@ namespace WebDAVSharp.Server.MethodHandlers
             _requestUri = GetRequestUri(context.Request.Url.ToString());
             try
             {
-                _webDavStoreItems = GetWebDavStoreItems(context.Request.Url.GetItem(server, store), depth);
+                var webDavStoreItem = context.Request.Url.GetItem(server, store);
+                _webDavStoreItems = GetWebDavStoreItems(webDavStoreItem, depth);
             }
             catch (UnauthorizedAccessException)
             {

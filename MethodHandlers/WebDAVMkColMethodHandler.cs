@@ -63,8 +63,14 @@ namespace WebDAVSharp.Server.MethodHandlers
             string collectionName = Uri.UnescapeDataString(
                 context.Request.Url.Segments.Last().TrimEnd('/', '\\')
                 );
-            if (collection.GetItemByName(collectionName) != null)
+            IWebDavStoreItem item;
+            if ((item = collection.GetItemByName(collectionName)) != null)
+            {
+                WebDavServer.Log.WarnFormat("MKCOL Failed: item {0} already exists as child of {1}. ",
+                    collectionName, collection.ItemPath);
                 throw new WebDavMethodNotAllowedException();
+            }
+                
               
             collection.CreateCollection(collectionName);
 
