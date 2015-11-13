@@ -21,6 +21,9 @@ namespace WebDAVSharp.Server
 {
     /// <summary>
     /// This class implements the core WebDAV server.
+    /// 
+    /// These are the codes allowed by the webdav protocl
+    /// https://msdn.microsoft.com/en-us/library/aa142868(v=exchg.65).aspx
     /// </summary>
     public class WebDavServer : WebDavDisposableBase
     {
@@ -516,11 +519,12 @@ namespace WebDAVSharp.Server
             {
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;
+                var response = ex.GetResponse(context);
                 if (!(context.Request.HttpMethod == "HEAD"))
                 {
-                    if (ex.Message != context.Response.StatusDescription)
+                    if (response != context.Response.StatusDescription)
                     {
-                        byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
+                        byte[] buffer = Encoding.UTF8.GetBytes(response);
                         context.Response.ContentEncoding = Encoding.UTF8;
                         context.Response.ContentLength64 = buffer.Length;
                         context.Response.OutputStream.Write(buffer, 0, buffer.Length);

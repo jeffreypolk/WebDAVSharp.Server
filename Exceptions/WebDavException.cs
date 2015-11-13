@@ -3,6 +3,7 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
 using System.Web;
+using WebDAVSharp.Server.Adapters;
 
 namespace WebDAVSharp.Server.Exceptions
 {
@@ -130,6 +131,16 @@ namespace WebDAVSharp.Server.Exceptions
                 format = message;
 
             return format.Replace("%s", HttpWorkerRequest.GetStatusDescription((int)statusCode));
+        }
+
+        /// <summary>
+        /// Return the result that should be returned to the caller.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public virtual string GetResponse(IHttpListenerContext context)
+        {
+            return this.Message;
         }
     }
 }

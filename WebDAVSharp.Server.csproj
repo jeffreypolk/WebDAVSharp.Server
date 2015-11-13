@@ -87,6 +87,7 @@
     <Compile Include="Adapters\IHttpListenerContext.cs" />
     <Compile Include="Adapters\IHttpListenerRequest.cs" />
     <Compile Include="Adapters\IHttpListenerResponse.cs" />
+    <Compile Include="Exceptions\WebDavLockedException.cs" />
     <Compile Include="Exceptions\WebDavLengthRequiredException.cs" />
     <Compile Include="Exceptions\WebDavUnsupportedMediaTypeException.cs" />
     <Compile Include="Exceptions\WebDavPreconditionFailedException.cs" />
