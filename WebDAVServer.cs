@@ -535,6 +535,7 @@ namespace WebDAVSharp.Server
             }
             catch (Exception innerEx)
             {
+                _log.Error("Exception cannot be returned to caller: " + ex.Message, ex);
                 _log.Error("Unable to send response for exception: " + innerEx.Message, innerEx);
             }
            
