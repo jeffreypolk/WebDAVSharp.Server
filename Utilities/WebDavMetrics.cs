@@ -19,9 +19,9 @@ namespace WebDAVSharp.Server.Utilities
         /// Used to 
         /// </summary>
         /// <returns></returns>
-        public static TimerContext GetMetricCallContext()
+        public static TimerContext GetMetricCallContext(String operation)
         {
-            return _callTimer.NewContext();
+            return _callTimer.NewContext(operation);
         }
     }
 }

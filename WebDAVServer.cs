@@ -413,9 +413,9 @@ namespace WebDAVSharp.Server
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavInternalServerException">If the server had an internal problem</exception>
         private void ProcessRequest(object state)
         {
-            using (WebDavMetrics.GetMetricCallContext())
+            IHttpListenerContext context = (IHttpListenerContext)state;
+            using (WebDavMetrics.GetMetricCallContext(context.Request.HttpMethod.ToString()))
             {
-                IHttpListenerContext context = (IHttpListenerContext)state;
                 OnProcessRequestStarted(context);
                 Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
 
