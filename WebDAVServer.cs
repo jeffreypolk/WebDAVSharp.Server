@@ -3,21 +3,32 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
-using Common.Logging;
 using WebDAVSharp.Server.Adapters;
+using WebDAVSharp.Server.Adapters.AuthenticationTypes;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.MethodHandlers;
 using WebDAVSharp.Server.Stores;
+using log4net;
+using WebDAVSharp.Server.Stores.Locks;
+using System.Xml;
+using WebDAVSharp.Server.Utilities;
+using System.Diagnostics;
 
 namespace WebDAVSharp.Server
 {
     /// <summary>
     /// This class implements the core WebDAV server.
+    /// 
+    /// These are the codes allowed by the webdav protocl
+    /// https://msdn.microsoft.com/en-us/library/aa142868(v=exchg.65).aspx
     /// </summary>
     public class WebDavServer : WebDavDisposableBase
     {
+
+        #region Variables
         /// <summary>
         /// The HTTP user
         /// </summary>
@@ -27,13 +38,162 @@ namespace WebDAVSharp.Server
         private readonly bool _ownsListener;
         private readonly IWebDavStore _store;
         private readonly Dictionary<string, IWebDavMethodHandler> _methodHandlers;
-        private readonly ILog _log;
+        internal readonly static ILog _log = LogManager.GetLogger("WebDavServer");
         private readonly object _threadLock = new object();
-
         private ManualResetEvent _stopEvent;
+
         private Thread _thread;
 
+        private const string DavHeaderVersion1And3 = "1, 3, extended-mkcol";
+        private const string DavHeaderVersion1_2_and1Extended = "1,2,1#extend";
+
+        private string _davHader = DavHeaderVersion1_2_and1Extended;
+
+        #endregion
+
+        #region Properties
+
         /// <summary>
+        /// Allow users to have Indefinite Locks
+        /// </summary>
+        public bool AllowInfiniteCheckouts
+        {
+            get
+            {
+                return WebDavStoreItemLock.AllowInfiniteCheckouts;
+            }
+            set
+            {
+                WebDavStoreItemLock.AllowInfiniteCheckouts = value;
+            }
+        }
+
+        /// <summary>
+        /// Allow users to have Indefinite Locks
+        /// </summary>
+        public bool LockEnabled
+        {
+            get
+            {
+                return WebDavStoreItemLock.LockEnabled;
+            }
+            set
+            {
+                WebDavStoreItemLock.LockEnabled = value;
+            }
+        }
+
+        /// <summary>
+        /// The maximum number of seconds a person can check an item out for.
+        /// </summary>
+        public long MaxCheckOutSeconds
+        {
+            get
+            {
+                return WebDavStoreItemLock.MaxCheckOutSeconds;
+            }
+            set
+            {
+                WebDavStoreItemLock.MaxCheckOutSeconds = value;
+            }
+        }
+
+        /// <summary>
+        /// Logging Interface
+        /// </summary>
+        public static ILog Log
+        {
+            get
+            {
+                return _log;
+            }
+        }
+
+        /// <summary>
+        /// Gets the <see cref="IWebDavStore" /> this <see cref="WebDavServer" /> is hosting.
+        /// </summary>
+        /// <value>
+        /// The store.
+        /// </value>
+        public IWebDavStore Store
+        {
+            get
+            {
+                return _store;
+            }
+        }
+
+        /// <summary>
+        /// Gets the 
+        /// <see cref="IHttpListener" /> that this 
+        /// <see cref="WebDavServer" /> uses for
+        /// the web server portion.
+        /// </summary>
+        /// <value>
+        /// The listener.
+        /// </value>
+        internal protected IHttpListener Listener
+        {
+            get
+            {
+                return _listener;
+            }
+        }
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="store"></param>
+        /// <param name="authtype"></param>
+        /// <param name="methodHandlers"></param>
+        public WebDavServer(IWebDavStore store, AuthType authtype, IEnumerable<IWebDavMethodHandler> methodHandlers = null)
+        {
+            _ownsListener = true;
+            switch (authtype)
+            {
+                case AuthType.Basic:
+                    _listener = new HttpListenerBasicAdapter();
+                    break;
+                case AuthType.Negotiate:
+                    _listener = new HttpListenerNegotiateAdapter();
+                    break;
+                case AuthType.Anonymous:
+                    _listener = new HttpListenerAnyonymousAdapter();
+                    break;
+                case AuthType.Smart:
+                    _listener = new HttpListenerSmartAdapter();
+                    break;
+            }
+            methodHandlers = methodHandlers ?? WebDavMethodHandlers.BuiltIn;
+
+            IWebDavMethodHandler[] webDavMethodHandlers = methodHandlers as IWebDavMethodHandler[] ?? methodHandlers.ToArray();
+
+            if (!webDavMethodHandlers.Any())
+                throw new ArgumentException("The methodHandlers collection is empty", "methodHandlers");
+            if (webDavMethodHandlers.Any(methodHandler => methodHandler == null))
+                throw new ArgumentException("The methodHandlers collection contains a null-reference", "methodHandlers");
+
+            //_negotiateListener = listener;
+            _store = store;
+            var handlersWithNames =
+                from methodHandler in webDavMethodHandlers
+                from name in methodHandler.Names
+                select new
+                {
+                    name,
+                    methodHandler
+                };
+            _methodHandlers = handlersWithNames.ToDictionary(v => v.name, v => v.methodHandler);
+
+        }
+
+        /// <summary>
+        /// This constructor uses a Negotiate Listener if one isn't passed.
+        /// 
         /// Initializes a new instance of the <see cref="WebDavServer" /> class.
         /// </summary>
         /// <param name="store">The 
@@ -64,7 +224,7 @@ namespace WebDAVSharp.Server
                 throw new ArgumentNullException("store");
             if (listener == null)
             {
-                listener = new HttpListenerAdapter();
+                listener = new HttpListenerNegotiateAdapter();
                 _ownsListener = true;
             }
             methodHandlers = methodHandlers ?? WebDavMethodHandlers.BuiltIn;
@@ -87,39 +247,11 @@ namespace WebDAVSharp.Server
                     methodHandler
                 };
             _methodHandlers = handlersWithNames.ToDictionary(v => v.name, v => v.methodHandler);
-            _log = LogManager.GetCurrentClassLogger();
-            }
-
-        /// <summary>
-        /// Gets the 
-        /// <see cref="IHttpListener" /> that this 
-        /// <see cref="WebDavServer" /> uses for
-        /// the web server portion.
-        /// </summary>
-        /// <value>
-        /// The listener.
-        /// </value>
-        internal IHttpListener Listener
-        {
-            get
-            {
-                return _listener;
-            }
         }
 
-        /// <summary>
-        /// Gets the <see cref="IWebDavStore" /> this <see cref="WebDavServer" /> is hosting.
-        /// </summary>
-        /// <value>
-        /// The store.
-        /// </value>
-        public IWebDavStore Store
-        {
-            get
-            {
-                return _store;
-            }
-        }
+        #endregion
+
+        #region Functions
 
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources
@@ -145,17 +277,17 @@ namespace WebDAVSharp.Server
         /// <exception cref="System.InvalidOperationException">This WebDAVServer instance is already running, call to Start is invalid at this point</exception>
         /// <exception cref="ObjectDisposedException">This <see cref="WebDavServer" /> instance has been disposed of.</exception>
         /// <exception cref="InvalidOperationException">The server is already running.</exception>
-        public void Start(String Url)
-            {
-            Listener.Prefixes.Add(Url);
+        public void Start(String url)
+        {
+            Listener.Prefixes.Add(url);
             EnsureNotDisposed();
             lock (_threadLock)
-                {
+            {
                 if (_thread != null)
-                    {
+                {
                     throw new InvalidOperationException(
                         "This WebDAVServer instance is already running, call to Start is invalid at this point");
-                    }
+                }
 
                 _stopEvent = new ManualResetEvent(false);
 
@@ -182,10 +314,10 @@ namespace WebDAVSharp.Server
             lock (_threadLock)
             {
                 if (_thread == null)
-                    {
+                {
                     throw new InvalidOperationException(
                         "This WebDAVServer instance is not running, call to Stop is invalid at this point");
-                    }
+                }
 
                 _stopEvent.Set();
                 _thread.Join();
@@ -205,26 +337,69 @@ namespace WebDAVSharp.Server
             try
             {
                 _listener.Start();
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
                 while (true)
                 {
+                    _log.DebugFormat("BackgroundThreadMethod poll ms: {0}", sw.ElapsedMilliseconds);
                     if (_stopEvent.WaitOne(0))
                         return;
 
+                    sw.Reset();
                     IHttpListenerContext context = Listener.GetContext(_stopEvent);
                     if (context == null)
                     {
                         _log.Debug("Exiting thread");
                         return;
                     }
+                    _log.DebugFormat("Queued Context request: {0}", context.Request.HttpMethod);
 
                     ThreadPool.QueueUserWorkItem(ProcessRequest, context);
                 }
+            }
+            catch (Exception ex)
+            {
+                //This error occours if we are not able to queue a request, the whole webdav server
+                //is terminating.
+                _log.Error(String.Format("Web dav ended unexpectedly with error {0}", ex.Message) , ex);
             }
             finally
             {
                 _listener.Stop();
                 _log.Info("WebDAVServer background thread has terminated");
             }
+        }
+
+        /// <summary>
+        /// Called before actual processing is done, useful to do some preliminary 
+        /// check or whatever the real implementation need to do.
+        /// </summary>
+        /// <param name="context"></param>
+        protected virtual void OnProcessRequestStarted(IHttpListenerContext context)
+        {
+
+        }
+
+        /// <summary>
+        /// Give to derived class the option to do further filtering of users. Even
+        /// if user authentication went good at protocol level (NTLM, Basic, Etc) 
+        /// we can still throw an unhautorized exception.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        protected virtual Boolean OnValidateUser(IHttpListenerContext context)
+        {
+            return true; //Default return value, user is always valid.
+        }
+
+        /// <summary>
+        /// Called after everything was processed, it can be used for doing specific
+        /// cleanup for the real implementation.
+        /// </summary>
+        /// <param name="context"></param>
+        protected virtual void OnProcessRequestCompleted(IHttpListenerContext context)
+        {
+
         }
 
         /// <summary>
@@ -238,74 +413,135 @@ namespace WebDAVSharp.Server
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavInternalServerException">If the server had an internal problem</exception>
         private void ProcessRequest(object state)
         {
-
             IHttpListenerContext context = (IHttpListenerContext)state;
-
-            // For authentication
-            Thread.SetData(Thread.GetNamedDataSlot(HttpUser), context.AdaptedInstance.User.Identity);
-
-            _log.Info(context.Request.HttpMethod + " " + context.Request.RemoteEndPoint + ": " + context.Request.Url);
-            try
+            using (WebDavMetrics.GetMetricCallContext(context.Request.HttpMethod.ToString()))
             {
+                OnProcessRequestStarted(context);
+                Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
+
+                String callInfo = String.Format("{0} : {1} : {2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
+                //_log.DebugFormat("CALL START: {0}", callInfo);
+                log4net.ThreadContext.Properties["webdav-request"] = callInfo;
+                XmlDocument request = null;
+                XmlDocument response = null;
+                StringBuilder requestHader = new StringBuilder();
+                if (_log.IsDebugEnabled)
+                {
+                    foreach (String header in context.Request.Headers)
+                    {
+                        requestHader.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
+                    }
+                }
+
                 try
                 {
-                    string method = context.Request.HttpMethod;
-                    IWebDavMethodHandler methodHandler;
-                    if (!_methodHandlers.TryGetValue(method, out methodHandler))
-                        throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
+                    try
+                    {
+                        string method = context.Request.HttpMethod;
+                        IWebDavMethodHandler methodHandler;
+                        if (!_methodHandlers.TryGetValue(method, out methodHandler))
+                            throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", context.Request.HttpMethod));
 
-                    context.Response.AppendHeader("DAV", "1,2,1#extend");
+                        context.Response.AppendHeader("DAV", _davHader);
+                        if (!OnValidateUser(context))
+                        {
+                            throw new WebDavUnauthorizedException();
+                        }
+                        methodHandler.ProcessRequest(this, context, Store, out request, out response);
 
-                    methodHandler.ProcessRequest(this, context, Store);
+                        if (_log.IsDebugEnabled)
+                        {
+                            _log.DebugFormat("WEB-DAV-CALL-ENDED: {0}\r\nREQUEST HEADER\r\n{1}\r\nRESPONSE HEADER\r\n{2}\r\nrequest:{3}\r\nresponse{4}",
+                                callInfo,
+                                requestHader,
+                                context.Response.DumpHeaders(),
+                                request.Beautify(),
+                                response.Beautify());
+                        }
+                    }
+                    catch (WebDavException)
+                    {
+                        throw;
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        throw new WebDavUnauthorizedException();
+                    }
+                    catch (FileNotFoundException ex)
+                    {
+                        _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavNotFoundException("FileNotFound", innerException: ex);
+                    }
+                    catch (DirectoryNotFoundException ex)
+                    {
+                        _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavNotFoundException("DirectoryNotFound", innerException: ex);
+                    }
+                    catch (NotImplementedException ex)
+                    {
+                        _log.Warn("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavNotImplementedException(innerException: ex);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error("(FAILED) WEB-DAV-CALL-ENDED:" + callInfo + ": " + ex.Message, ex);
+                        throw new WebDavInternalServerException(innerException: ex);
+                    }
+                }
+                catch (WebDavException ex)
+                {
+                    if (ex is WebDavNotFoundException)
+                    {
+                        //not found exception is quite common, Windows explorer often ask for files
+                        //that are not there 
+                        _log.Debug(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
+                            callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
+                    }
+                    else
+                    {
+                        _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
+                            callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
+                    }
 
+                    SendResponseForException(context, ex);
                 }
-                catch (WebDavException)
+                finally
                 {
-                    throw;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    throw new WebDavUnauthorizedException();
-                }
-                catch (FileNotFoundException ex)
-                {
-                    _log.Warn(ex.Message);
-                    throw new WebDavNotFoundException(innerException: ex);
-                }
-                catch (DirectoryNotFoundException ex)
-                {
-                    _log.Warn(ex.Message);
-                    throw new WebDavNotFoundException(innerException: ex);
-                }
-                catch (NotImplementedException ex)
-                {
-                    _log.Warn(ex.Message);
-                    throw new WebDavNotImplementedException(innerException: ex);
-                }
-                catch (Exception ex)
-                {
-                    _log.Warn(ex.Message);
-                    throw new WebDavInternalServerException(innerException: ex);
+                    log4net.ThreadContext.Properties["webdav-request"] = null;
+                    OnProcessRequestCompleted(context);
                 }
             }
-            catch (WebDavException ex)
+        }
+
+        private void SendResponseForException(IHttpListenerContext context, WebDavException ex)
+        {
+            try
             {
-                _log.Warn(ex.StatusCode + " " + ex.Message);
                 context.Response.StatusCode = ex.StatusCode;
                 context.Response.StatusDescription = ex.StatusDescription;
-                if (ex.Message != context.Response.StatusDescription)
+                var response = ex.GetResponse(context);
+                if (!(context.Request.HttpMethod == "HEAD"))
                 {
-                    byte[] buffer = Encoding.UTF8.GetBytes(ex.Message);
-                    context.Response.ContentEncoding = Encoding.UTF8;
-                    context.Response.ContentLength64 = buffer.Length;
-                    context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                    if (response != context.Response.StatusDescription)
+                    {
+                        byte[] buffer = Encoding.UTF8.GetBytes(response);
+                        context.Response.ContentEncoding = Encoding.UTF8;
+                        context.Response.ContentLength64 = buffer.Length;
+                        context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                        context.Response.OutputStream.Flush();
+                    }
                 }
                 context.Response.Close();
             }
-            finally
+            catch (Exception innerEx)
             {
-                _log.Info(context.Response.StatusCode + " " + context.Response.StatusDescription + ": " + context.Request.HttpMethod + " " + context.Request.RemoteEndPoint + ": " + context.Request.Url);
+                _log.Error("Exception cannot be returned to caller: " + ex.Message, ex);
+                _log.Error("Unable to send response for exception: " + innerEx.Message, innerEx);
             }
+           
         }
+
+
+        #endregion
     }
 }

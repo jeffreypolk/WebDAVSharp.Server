@@ -5,25 +5,28 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Xml;
-using Common.Logging;
+
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Stores;
 using WebDAVSharp.Server.Utilities;
+using log4net;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
     /// <summary>
     /// This class implements the <c>PROPPATCH</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavProppatchMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavProppatchMethodHandler : WebDavMethodHandlerBase
     {
+
+        #region Properties
         /// <summary>
         /// Gets the collection of the names of the HTTP methods handled by this instance.
         /// </summary>
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -34,6 +37,10 @@ namespace WebDAVSharp.Server.MethodHandlers
             }
         }
 
+        #endregion
+
+        #region Functions
+
         /// <summary>
         /// Processes the request.
         /// </summary>
@@ -42,10 +49,15 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <see cref="IHttpListenerContext" /> object containing both the request and response
         /// objects to use.</param>
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        /// <param name="response"></param>
+        /// <param name="request"></param>
+        protected override void OnProcessRequest(
+           WebDavServer server,
+           IHttpListenerContext context,
+           IWebDavStore store,
+           XmlDocument request,
+           XmlDocument response)
         {
-            ILog log = LogManager.GetCurrentClassLogger();
-
             /***************************************************************************************************
              * Retreive al the information from the request
              ***************************************************************************************************/
@@ -65,29 +77,28 @@ namespace WebDAVSharp.Server.MethodHandlers
 
                 if (!String.IsNullOrEmpty(requestBody))
                 {
-                    XmlDocument requestDocument = new XmlDocument();
-                    requestDocument.LoadXml(requestBody);
+                    request.LoadXml(requestBody);
 
-                    if (requestDocument.DocumentElement != null)
+                    if (request.DocumentElement != null)
                     {
-                        if (requestDocument.DocumentElement.LocalName != "propertyupdate")
+                        if (request.DocumentElement.LocalName != "propertyupdate")
                         {
-                            log.Debug("PROPPATCH method without propertyupdate element in xml document");
+                            WebDavServer.Log.Debug("PROPPATCH method without propertyupdate element in xml document");
                         }
 
-                        manager = new XmlNamespaceManager(requestDocument.NameTable);
+                        manager = new XmlNamespaceManager(request.NameTable);
                         manager.AddNamespace("D", "DAV:");
                         manager.AddNamespace("Office", "schemas-microsoft-com:office:office");
                         manager.AddNamespace("Repl", "http://schemas.microsoft.com/repl/");
                         manager.AddNamespace("Z", "urn:schemas-microsoft-com:");
 
-                        propNode = requestDocument.DocumentElement.SelectSingleNode("D:set/D:prop", manager);
+                        propNode = request.DocumentElement.SelectSingleNode("D:set/D:prop", manager);
                     }
                 }
             }
             catch (Exception ex)
             {
-                log.Warn(ex.Message);
+                WebDavServer.Log.Warn(ex.Message);
             }
 
             /***************************************************************************************************
@@ -100,60 +111,36 @@ namespace WebDAVSharp.Server.MethodHandlers
             // Get the item from the collection
             IWebDavStoreItem item = GetItemFromCollection(collection, context.Request.Url);
 
-            FileInfo fileInfo = new FileInfo(item.ItemPath);
-
-            if (propNode != null && fileInfo.Exists)
-            {
-                foreach (XmlNode node in propNode.ChildNodes)
-                {
-                    switch (node.LocalName)
-                    {
-                        case "Win32CreationTime":
-                            fileInfo.CreationTime = Convert.ToDateTime(node.InnerText).ToUniversalTime();
-                            break;
-                        case "Win32LastAccessTime":
-                            fileInfo.LastAccessTime = Convert.ToDateTime(node.InnerText).ToUniversalTime();
-                            break;
-                        case "Win32LastModifiedTime":
-                            fileInfo.LastWriteTime = Convert.ToDateTime(node.InnerText).ToUniversalTime();
-                            break;
-                        case "Win32FileAttributes":
-                            //fileInfo.Attributes = 
-                            //fileInfo.Attributes = Convert.ToDateTime(node.InnerText);
-                            break;
-                    }
-                }
-            }
-
+            //Alk: Original code use directly file info to grab some properties that were not used.
+            WebDavItemInfo info = item.GetDocumentInfo();
 
             /***************************************************************************************************
              * Create the body for the response
              ***************************************************************************************************/
 
             // Create the basic response XmlDocument
-            XmlDocument responseDoc = new XmlDocument();
             const string responseXml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?><D:multistatus " +
                                        "xmlns:Z=\"urn:schemas-microsoft-com:\" xmlns:D=\"DAV:\">" +
                                        "<D:response></D:response></D:multistatus>";
-            responseDoc.LoadXml(responseXml);
+            response.LoadXml(responseXml);
 
             // Select the response node
-            XmlNode responseNode = responseDoc.DocumentElement.SelectSingleNode("D:response", manager);
+            XmlNode responseNode = response.DocumentElement.SelectSingleNode("D:response", manager);
 
             // Add the elements
 
             // The href element
             WebDavProperty hrefProperty = new WebDavProperty("href", requestUri.ToString());
-            responseNode.AppendChild(hrefProperty.ToXmlElement(responseDoc));
+            responseNode.AppendChild(hrefProperty.ToXmlElement(response));
 
             // The propstat element
-            WebDavProperty propstatProperty = new WebDavProperty("propstat", "");
-            XmlElement propstatElement = propstatProperty.ToXmlElement(responseDoc);
+            WebDavProperty propstatProperty = new WebDavProperty("propstat", string.Empty);
+            XmlElement propstatElement = propstatProperty.ToXmlElement(response);
 
             // The propstat/status element
             WebDavProperty statusProperty = new WebDavProperty("status", "HTTP/1.1 " + context.Response.StatusCode + " " +
                     HttpWorkerRequest.GetStatusDescription(context.Response.StatusCode));
-            propstatElement.AppendChild(statusProperty.ToXmlElement(responseDoc));
+            propstatElement.AppendChild(statusProperty.ToXmlElement(response));
 
             // The other propstat children
             foreach (WebDavProperty property in from XmlNode child in propNode.ChildNodes
@@ -163,10 +150,10 @@ namespace WebDAVSharp.Server.MethodHandlers
                             .Contains("lastaccesstime") || child.Name.ToLower()
                                 .Contains("lastmodifiedtime")
                 let node = propNode.SelectSingleNode(child.Name, manager)
-                select node != null
-                    ? new WebDavProperty(child.LocalName, "", node.NamespaceURI)
-                    : new WebDavProperty(child.LocalName, "", ""))
-                propstatElement.AppendChild(property.ToXmlElement(responseDoc));
+
+                select new WebDavProperty(child.LocalName, string.Empty, node != null ? node.NamespaceURI : string.Empty))
+
+                propstatElement.AppendChild(property.ToXmlElement(response));
 
             responseNode.AppendChild(propstatElement);
 
@@ -175,7 +162,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             ***************************************************************************************************/
             
             // convert the StringBuilder
-            string resp = responseDoc.InnerXml;
+            string resp = response.InnerXml;
             byte[] responseBytes = Encoding.UTF8.GetBytes(resp);
 
 
@@ -192,5 +179,8 @@ namespace WebDAVSharp.Server.MethodHandlers
 
             context.Response.Close();
         }
+
+        #endregion
+
     }
 }

@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Runtime.InteropServices;
+using WebDAVSharp.Server.Stores.Locks;
 
 namespace WebDAVSharp.Server.Stores
 {
@@ -88,5 +92,39 @@ namespace WebDAVSharp.Server.Stores
         {
             get;
         }
+
+        /// <summary>
+        /// Return logical lock key for items, useful if you are using virtual
+        /// folder where a document can be located in different paths.
+        /// </summary>
+        string LockLogicalKey { get; }
+
+        /// <summary>
+        /// Try to lock the resource
+        /// </summary>
+        /// <returns>True if the resource is locked, false if the resource was
+        /// already locked and cannot be unlocked.</returns>
+        Boolean Lock();
+
+        /// <summary>
+        /// Unlock the resource 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns>true if the unlock operation is successful</returns>
+        Boolean UnLock(String token);
+
+        /// <summary>
+        /// return 
+        /// </summary>
+        /// <returns></returns>
+        WebDavItemInfo GetDocumentInfo();
+
+        /// <summary>
+        /// Returns all custom properties for this object, it can return null 
+        /// if this object has no custom properties.
+        /// </summary>
+        /// <returns>List of properties grouped by namespaces, if the object does not 
+        /// support custom properties it can return null.</returns>
+        List<WebDavCustomProperties> GetCustomProperties();
     }
 }

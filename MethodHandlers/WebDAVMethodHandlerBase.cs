@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
@@ -9,9 +11,18 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This is the base class for <see cref="IWebDavMethodHandler" /> implementations.
     /// </summary>
-    internal abstract class WebDavMethodHandlerBase
-        {
+    internal abstract class WebDavMethodHandlerBase : IWebDavMethodHandler
+    {
+
+        #region Variables
+
         private const int DepthInfinity = -1;
+
+        public abstract IEnumerable<string> Names { get; }
+        
+        #endregion
+
+        #region Static Functions
 
         /// <summary>
         /// Get the parent collection from the requested
@@ -29,7 +40,10 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// </exception>
         /// <exception cref="WebDavUnauthorizedException">When the user is unauthorized and doesn't have access</exception>
         /// <exception cref="WebDavConflictException">When the parent collection doesn't exist</exception>
-        public static IWebDavStoreCollection GetParentCollection(WebDavServer server, IWebDavStore store, Uri childUri)
+        public static IWebDavStoreCollection GetParentCollection(
+            WebDavServer server, 
+            IWebDavStore store, 
+            Uri childUri)
         {
             Uri parentCollectionUri = childUri.GetParentUri();
             IWebDavStoreCollection collection;
@@ -39,16 +53,36 @@ namespace WebDAVSharp.Server.MethodHandlers
             }
             catch (UnauthorizedAccessException)
             {
-                throw  new WebDavUnauthorizedException();
+                throw new WebDavUnauthorizedException();
             }
-            catch(WebDavNotFoundException)
+            catch (WebDavNotFoundException wex)
             {
-                throw new WebDavConflictException();
+                throw new WebDavConflictException(innerException : wex);
             }
             if (collection == null)
-                throw new WebDavConflictException();
+                throw new WebDavConflictException(String.Format("Get parent collection return null. Uri: {0}", childUri));
 
+            //if (WebDavServer.Log.IsDebugEnabled)
+            //{
+            //    WebDavServer.Log.DebugFormat("GETPARENTCOLLECTION: uri {0} parenturi {1} return collection {2}",
+            //        childUri, parentCollectionUri, GetFullItemPath(collection));
+            //}
+            
             return collection;
+        }
+
+        public static string GetFullItemPath(IWebDavStoreCollection collection)
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            var current = collection;
+            while (current != null)
+            {
+                sb.Insert(0, current.Name);
+                sb.Append("/");
+                current = current.ParentCollection;
+            }
+            sb.Length -= 1;
+            return sb.ToString();
         }
 
         /// <summary>
@@ -66,20 +100,22 @@ namespace WebDAVSharp.Server.MethodHandlers
         public static IWebDavStoreItem GetItemFromCollection(IWebDavStoreCollection collection, Uri childUri)
         {
             IWebDavStoreItem item;
+            String name = null;
             try
             {
-                item = collection.GetItemByName(Uri.UnescapeDataString(childUri.Segments.Last().TrimEnd('/', '\\')));
+                name = Uri.UnescapeDataString(childUri.Segments.Last().TrimEnd('/', '\\'));
+                item = collection.GetItemByName(name);
             }
             catch (UnauthorizedAccessException)
             {
                 throw new WebDavUnauthorizedException();
             }
-            catch (WebDavNotFoundException)
+            catch (WebDavNotFoundException wex)
             {
-                throw new WebDavNotFoundException();
+                throw new WebDavNotFoundException(String.Format("Cannot found name {0} from uri {1} father {2}", name, childUri, collection.ItemPath), wex);
             }
             if (item == null)
-                throw new WebDavNotFoundException();
+                throw new WebDavNotFoundException(String.Format("Cannot found name {0} from uri {1} father {2}", name, childUri, collection.ItemPath));
 
             return item;
         }
@@ -124,6 +160,18 @@ namespace WebDAVSharp.Server.MethodHandlers
             // else, return false
         }
 
+        public static string GetLockTokenIfHeader(IHttpListenerRequest request)
+        {
+            //(<urn:uuid:cfdc70da-7feb-4bfe-8cb7-18f97d8fecb1>)
+            return request.Headers.AllKeys.Contains("If") ? request.Headers["If"].Substring(2, request.Headers["If"].Length-4) : string.Empty;
+        }
+        public static string GetLockTokenHeader(IHttpListenerRequest request)
+        {
+            if (!request.Headers.AllKeys.Contains("Lock-Token")) return string.Empty;
+            string token = request.Headers["Lock-Token"];
+            return (token.Substring(1, token.Length - 2));
+        }
+
         /// <summary>
         /// Gets the Timeout header : Second-number
         /// </summary>
@@ -157,7 +205,28 @@ namespace WebDAVSharp.Server.MethodHandlers
             if (!String.IsNullOrEmpty(destinationUri))
                 return new Uri(destinationUri);
             // else, throw exception
-            throw new WebDavConflictException();
+            throw new WebDavConflictException(String.Format("Get destination header null. Request uri: {0} ", request.Url.AbsoluteUri));
         }
+
+        public void ProcessRequest(
+            WebDavServer server, 
+            IHttpListenerContext context, 
+            IWebDavStore store, 
+            out XmlDocument request, 
+            out XmlDocument response)
+        {
+            request = new XmlDocument();
+            response = new XmlDocument();
+            OnProcessRequest(server, context, store, request, response);
+        }
+
+        protected abstract void OnProcessRequest(
+            WebDavServer server,
+            IHttpListenerContext context,
+            IWebDavStore store,
+            XmlDocument request,
+            XmlDocument response);
+
+        #endregion
     }
 }

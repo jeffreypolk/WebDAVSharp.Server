@@ -1,24 +1,28 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Web;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
+using WebDAVSharp.Server.Stores.Locks;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
     /// <summary>
     /// This class implements the <c>PROPFIND</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavHeadMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavHeadMethodHandler : WebDavMethodHandlerBase
     {
+
+        #region Properties
         /// <summary>
         /// Gets the collection of the names of the HTTP methods handled by this instance.
         /// </summary>
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -28,6 +32,10 @@ namespace WebDAVSharp.Server.MethodHandlers
                 };
             }
         }
+
+        #endregion
+
+        #region Functions
 
         /// <summary>
         /// Processes the request.
@@ -43,14 +51,32 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <para>
         ///   <paramref name="context" /> specifies a request for a store item that is not a document.</para></exception>
         /// <exception cref="WebDavConflictException"><paramref name="context" /> specifies a request for a store item using a collection path that does not exist.</exception>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        /// <param name="response"></param>
+        /// <param name="request"></param>
+        protected override void OnProcessRequest(
+           WebDavServer server,
+           IHttpListenerContext context,
+           IWebDavStore store,
+           XmlDocument request,
+           XmlDocument response)
         {
             // Get the parent collection of the item
-            IWebDavStoreCollection collection = GetParentCollection(server, store, context.Request.Url);
-
-            // Get the item from the collection
-            IWebDavStoreItem item = GetItemFromCollection(collection, context.Request.Url);
-
+            IWebDavStoreCollection collection;
+            IWebDavStoreItem item = null;
+            //PATCH: Cyberduck and some windows ask HEAD of the root, and it was not supported.
+            var uri = context.Request.Url;
+            if (uri.Segments.Length == 1)
+            {
+                collection = store.Root;
+                item = store.Root;
+            }
+            else
+            {
+                collection = GetParentCollection(server, store, uri);
+                // Get the item from the collection
+                item = GetItemFromCollection(collection, context.Request.Url);
+            }
+           
             /***************************************************************************************************
             * Send the response
             ***************************************************************************************************/
@@ -66,5 +92,8 @@ namespace WebDAVSharp.Server.MethodHandlers
 
             context.Response.Close();
         }
+
+        #endregion
+
     }
 }

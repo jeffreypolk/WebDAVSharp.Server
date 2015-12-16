@@ -18,7 +18,7 @@ namespace WebDAVSharp.Server.Exceptions
         /// <see cref="Exception" /> that is the cause for this exception;
         /// or 
         /// <c>null</c> if no inner exception is specified.</param>
-        public WebDavNotFoundException(string message = null, Exception innerException = null)
+        public WebDavNotFoundException(string message, Exception innerException = null)
             : base(HttpStatusCode.NotFound, message, innerException)
         {
             // Do nothing here

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Stores;
 
@@ -28,7 +29,14 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <param name="context">The 
         /// <see cref="IHttpListenerContext" /> object containing both the request and response
         /// objects to use.</param>
+        /// <param name="request"></param>
+        /// <param name="response"></param>
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
-        void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store);
+        void ProcessRequest(
+            WebDavServer server, 
+            IHttpListenerContext context, 
+            IWebDavStore store,
+            out XmlDocument request,
+            out XmlDocument response);
     }
 }

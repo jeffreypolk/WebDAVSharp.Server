@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
@@ -11,15 +12,17 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>COPY</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavCopyMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavCopyMethodHandler : WebDavMethodHandlerBase
     {
+        #region Properties
+
         /// <summary>
         /// Gets the collection of the names of the HTTP methods handled by this instance.
         /// </summary>
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -30,6 +33,10 @@ namespace WebDAVSharp.Server.MethodHandlers
             }
         }
 
+        #endregion
+
+        #region Public Functions
+
         /// <summary>
         /// Processes the request.
         /// </summary>
@@ -37,9 +44,16 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <param name="context">The 
         /// <see cref="IHttpListenerContext" /> object containing both the request and response
         /// objects to use.</param>
+        /// <param name="request"></param>
+        /// <param name="response"></param>
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavMethodNotAllowedException"></exception>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        protected override void OnProcessRequest(
+                   WebDavServer server,
+                   IHttpListenerContext context,
+                   IWebDavStore store,
+                   XmlDocument request,
+                   XmlDocument response)
         {            
             IWebDavStoreItem source = context.Request.Url.GetItem(server, store);
             if (source is IWebDavStoreDocument || source is IWebDavStoreCollection)
@@ -82,7 +96,10 @@ namespace WebDAVSharp.Server.MethodHandlers
 
             destinationParentCollection.CopyItemHere(source, destinationName, copyContent);
 
-            context.SendSimpleResponse(isNew ? HttpStatusCode.Created : HttpStatusCode.NoContent);
+            context.SendSimpleResponse(isNew ? (int)HttpStatusCode.Created : (int)HttpStatusCode.NoContent);
         }
+
+        #endregion
+
     }
 }

@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Runtime.InteropServices;
 using WebDAVSharp.Server.Exceptions;
+using WebDAVSharp.Server.Stores.Locks;
 
 namespace WebDAVSharp.Server.Stores.BaseClasses
 {
@@ -8,9 +12,14 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
     /// </summary>
     public class WebDavStoreItemBase : IWebDavStoreItem
     {
+        #region Variables
+
         private readonly IWebDavStoreCollection _parentCollection;
         private string _name;
 
+        #endregion
+
+        #region Constuctor
         /// <summary>
         /// Initializes a new instance of the <see cref="WebDavStoreItemBase" /> class.
         /// </summary>
@@ -27,7 +36,9 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
             _name = name;
         }
 
-        #region IWebDAVStoreItem Members
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Gets the parent <see cref="IWebDavStoreCollection" /> that owns this <see cref="IWebDavStoreItem" />.
@@ -54,7 +65,8 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
             set
             {
                 string fixedName = (value ?? string.Empty).Trim();
-                if (fixedName == _name) return;
+                if (fixedName == _name)
+                    return;
                 if (!OnNameChanging(_name, fixedName))
                     throw new WebDavForbiddenException();
                 string oldName = _name;
@@ -90,13 +102,16 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
         /// </summary>
         public virtual string ItemPath
         {
-            get { return String.Empty; }
+            get
+            {
+                return String.Empty;
+            }
         }
 
         /// <summary>
         /// Gets if this <see cref="IWebDavStoreItem" /> is a collection.
         /// </summary>
-        public bool IsCollection
+        public virtual bool IsCollection
         {
             get
             {
@@ -115,7 +130,17 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
             }
         }
 
+        /// <summary>
+        /// Standard Lock Logical Key is the path of the document.
+        /// </summary>
+        public virtual string LockLogicalKey
+        {
+            get { return ItemPath; }
+        }
+
         #endregion
+
+        #region Functions
 
         /// <summary>
         /// Called before the name of this <see cref="IWebDavStoreItem" /> is changing.
@@ -140,5 +165,52 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
         protected virtual void OnNameChanged(string oldName, string newName)
         {
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool Lock()
+        {
+            //Resource can always be locked
+            return true; 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public virtual bool UnLock(string token)
+        {
+            //Resource can always be unlocked
+            return true;
+        }
+
+        /// <summary>
+        /// TODO: we need to override this in derived classes to return correct
+        /// information.
+        /// </summary>
+        /// <returns></returns>
+        public virtual WebDavItemInfo GetDocumentInfo()
+        {
+            return new WebDavItemInfo()
+            {
+                CreationTime = DateTime.Now,
+                LastAccessTime = DateTime.Now,
+                LastWriteTime = DateTime.Now,
+            };
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public virtual List<WebDavCustomProperties> GetCustomProperties()
+        {
+            return null;
+        }
+
+        #endregion
     }
 }

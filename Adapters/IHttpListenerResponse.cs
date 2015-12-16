@@ -86,5 +86,11 @@ namespace WebDAVSharp.Server.Adapters
         /// <param name="name">The name of the HTTP header to append the <paramref name="value" /> to.</param>
         /// <param name="value">The value to append to the <paramref name="name" /> header.</param>
         void AppendHeader(string name, string value);
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        System.String DumpHeaders();
     }
 }

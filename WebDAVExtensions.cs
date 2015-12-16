@@ -29,7 +29,7 @@ namespace WebDAVSharp.Server
             if (uri == null)
                 throw new ArgumentNullException("uri");
             if (uri.Segments.Length == 1)
-                throw new InvalidOperationException("Cannot get parent of root");
+                return uri;
 
             string url = uri.ToString();
             int index = url.Length - 1;
@@ -47,13 +47,13 @@ namespace WebDAVSharp.Server
         /// <param name="statusCode">The HTTP status code for the response.</param>
         /// <exception cref="System.ArgumentNullException">context</exception>
         /// <exception cref="ArgumentNullException"><paramref name="context" /> is <c>null</c>.</exception>
-        public static void SendSimpleResponse(this IHttpListenerContext context, HttpStatusCode statusCode = HttpStatusCode.OK)
+        public static void SendSimpleResponse(this IHttpListenerContext context, int statusCode = (int)HttpStatusCode.OK)
         {
             if (context == null)
                 throw new ArgumentNullException("context");
 
-            context.Response.StatusCode = (int)statusCode;
-            context.Response.StatusDescription = HttpWorkerRequest.GetStatusDescription((int)statusCode);
+            context.Response.StatusCode = statusCode;
+            context.Response.StatusDescription = HttpWorkerRequest.GetStatusDescription(statusCode);
             context.Response.Close();
         }
 
@@ -72,12 +72,42 @@ namespace WebDAVSharp.Server
         public static Uri GetPrefixUri(this Uri uri, WebDavServer server)
         {
             string url = uri.ToString();
-            foreach (
-                string prefix in
-                    server.Listener.Prefixes.Where(
-                        prefix => url.StartsWith(uri.ToString(), StringComparison.OrdinalIgnoreCase)))
-                return new Uri(prefix);
+
+            string exactPrefix = server.Listener.Prefixes
+                .FirstOrDefault(item => url.StartsWith(item, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(exactPrefix))
+            {
+                return new Uri(exactPrefix);
+            }
+
+            Uri wildcardPrefix = GetPrefixWithWildCard(uri, server);
+
+            if (wildcardPrefix != null)
+            {
+                return wildcardPrefix;
+            }
+
             throw new WebDavInternalServerException("Unable to find correct server root");
+        }
+
+        private static String[] AllIpWildChards = new[] { "*", "+" };
+
+        private static Uri GetPrefixWithWildCard(Uri uri, WebDavServer server)
+        {
+            foreach (var wc in AllIpWildChards)
+            {
+                string wildcardUrl = new UriBuilder(uri) { Host = "WebDAVSharpSpecialHostTag" }
+               .ToString().Replace("WebDAVSharpSpecialHostTag", wc);
+
+                string wildcardPrefix = server.Listener.Prefixes
+                    .FirstOrDefault(item => wildcardUrl.StartsWith(item, StringComparison.OrdinalIgnoreCase));
+                if (!String.IsNullOrEmpty(wildcardPrefix))
+                {
+                    return new Uri(wildcardPrefix.Replace("://" + wc, string.Format("://{0}", uri.Host)));
+                } 
+            }
+            return null;
         }
 
         /// <summary>
@@ -102,7 +132,10 @@ namespace WebDAVSharp.Server
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavNotFoundException">If the item was not found.</exception>
         /// <exception cref="WebDavConflictException"><paramref name="uri" /> refers to a document in a collection, where the collection does not exist.</exception>
         /// <exception cref="WebDavNotFoundException"><paramref name="uri" /> refers to a document that does not exist.</exception>
-        public static IWebDavStoreItem GetItem(this Uri uri, WebDavServer server, IWebDavStore store)
+        public static IWebDavStoreItem GetItem(
+            this Uri uri,
+            WebDavServer server, 
+            IWebDavStore store)
         {
             if (uri == null)
                 throw new ArgumentNullException("uri");
@@ -120,10 +153,11 @@ namespace WebDAVSharp.Server
             
             for (int index = prefixUri.Segments.Length; index < uri.Segments.Length; index++)
             {
-                string segmentName = Uri.UnescapeDataString(uri.Segments[index]);
-                IWebDavStoreItem nextItem = collection.GetItemByName(segmentName.TrimEnd('/', '\\'));
+                string segmentName = Uri.UnescapeDataString(uri.Segments[index]).TrimEnd('/', '\\');
+                
+                IWebDavStoreItem nextItem = collection.GetItemByName(segmentName);
                 if (nextItem == null)
-                    throw new WebDavNotFoundException(); //throw new WebDavConflictException();
+                    throw new WebDavNotFoundException(String.Format("Cannot find item {0} from collection {1}", segmentName, collection.ItemPath)); //throw new WebDavConflictException();
 
                 if (index == uri.Segments.Length - 1)
                     item = nextItem;
@@ -131,12 +165,12 @@ namespace WebDAVSharp.Server
                 {
                     collection = nextItem as IWebDavStoreCollection;
                     if (collection == null)
-                        throw new WebDavNotFoundException();
+                        throw new WebDavNotFoundException(String.Format("NextItem [{0}] is not a collection", nextItem.ItemPath));
                 }
             }
 
             if (item == null)
-                throw new WebDavNotFoundException();
+                throw new WebDavNotFoundException(String.Format("Unable to find {0}", uri));
 
             return item;
         }

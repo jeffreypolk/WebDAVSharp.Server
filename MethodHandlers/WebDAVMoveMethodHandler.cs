@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
@@ -11,15 +12,16 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>MOVE</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavMoveMethodHandler : WebDavMethodHandlerBase, IWebDavMethodHandler
+    internal class WebDavMoveMethodHandler : WebDavMethodHandlerBase
     {
+        #region Properties
         /// <summary>
         /// Gets the collection of the names of the HTTP methods handled by this instance.
         /// </summary>
         /// <value>
         /// The names.
         /// </value>
-        public IEnumerable<string> Names
+        public override IEnumerable<string> Names
         {
             get
             {
@@ -30,6 +32,10 @@ namespace WebDAVSharp.Server.MethodHandlers
             }
         }
 
+        #endregion
+
+        #region Functions
+
         /// <summary>
         /// Processes the request.
         /// </summary>
@@ -38,9 +44,16 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <see cref="IHttpListenerContext" /> object containing both the request and response
         /// objects to use.</param>
         /// <param name="store">The <see cref="IWebDavStore" /> that the <see cref="WebDavServer" /> is hosting.</param>
-        public void ProcessRequest(WebDavServer server, IHttpListenerContext context, IWebDavStore store)
+        /// <param name="response"></param>
+        /// <param name="request"></param>
+        protected override void OnProcessRequest(
+           WebDavServer server,
+           IHttpListenerContext context,
+           IWebDavStore store,
+           XmlDocument request,
+           XmlDocument response)
         {
-            var source = context.Request.Url.GetItem(server, store);
+            IWebDavStoreItem source = context.Request.Url.GetItem(server, store);
 
             MoveItem(server, context, store, source);
         }
@@ -56,7 +69,7 @@ namespace WebDAVSharp.Server.MethodHandlers
         /// <param name="sourceWebDavStoreItem">The <see cref="IWebDavStoreItem" /> that will be moved</param>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavForbiddenException">If the source path is the same as the destination path</exception>
         /// <exception cref="WebDAVSharp.Server.Exceptions.WebDavPreconditionFailedException">If one of the preconditions failed</exception>
-        private void MoveItem(WebDavServer server, IHttpListenerContext context, IWebDavStore store,
+        private static void MoveItem(WebDavServer server, IHttpListenerContext context, IWebDavStore store,
             IWebDavStoreItem sourceWebDavStoreItem)
         {
             Uri destinationUri = GetDestinationHeader(context.Request);
@@ -81,7 +94,9 @@ namespace WebDAVSharp.Server.MethodHandlers
             destinationParentCollection.MoveItemHere(sourceWebDavStoreItem, destinationName);
 
             // send correct response
-            context.SendSimpleResponse(isNew ? HttpStatusCode.Created : HttpStatusCode.NoContent);
+            context.SendSimpleResponse(isNew ? (int)HttpStatusCode.Created : (int)HttpStatusCode.NoContent);
         }
+
+        #endregion
     }
 }
