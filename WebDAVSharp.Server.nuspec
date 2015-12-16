@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
-        <id>WebDAVSharp.Server</id>
+        <id>Jarvis.WebDAVSharp.Server</id>
         <version>1.0.7</version>
         <title>WebDAV# Server</title>
         <authors>Ewout Merckx,Lieven Janssen, forked by Proximo S.r.L.</authors>
@@ -12,8 +12,11 @@
 
 This server was based on another open source project, also called WebDAV#, maintained by Lasse V. Karlsen.</description>
         <summary>The WebDAV server was based on another open source project, also called WebDAV#, maintained by Lasse V. Karlsen.
-This version of WebDAV# has been developed by Lieven Janssen and Ewout Merckx.</summary>
-        <copyright>2014 Xplore+</copyright>
+Then WebDAV# has been developed by Lieven Janssen and Ewout Merckx.
+
+This version was forked by Proximo S.r.L. and republished in MyGet with a different id to avoid conflicts.
+</summary>
+        <copyright></copyright>
         <tags>WebDAV, server, WebDAVSharp, WebDAV#, API, framework, Xplore+</tags>
         <frameworkAssemblies>
             <frameworkAssembly assemblyName="System" targetFramework="" />
@@ -22,6 +25,11 @@ This version of WebDAV# has been developed by Lieven Janssen and Ewout Merckx.</
             <frameworkAssembly assemblyName="System.Web" targetFramework="" />
             <frameworkAssembly assemblyName="System.Xml" targetFramework="" />
         </frameworkAssemblies>
+		
+		<dependencies>
+		  <dependency id="log4net" version="1.2.10" /> 
+		  <dependency id="Metrics.NET" version="0.2.16" /> 
+		</dependencies>
     </metadata>
     <files>
         <file src="bin\release\WebDAVSharp.Server.dll" target="lib\WebDAVSharp.Server.dll" />
