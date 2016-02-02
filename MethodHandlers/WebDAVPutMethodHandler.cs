@@ -76,12 +76,17 @@ namespace WebDAVSharp.Server.MethodHandlers
                 doc = parentCollection.CreateDocument(itemName);
             }
 
+            Int64 contentLength = context.Request.ContentLength64;
             if (context.Request.ContentLength64 < 0)
-                throw new WebDavLengthRequiredException();
+            {
+                var XLength = context.Request.Headers["x-expected-entity-length"];
+                if (!Int64.TryParse(XLength, out contentLength))
+                    throw new WebDavLengthRequiredException();
+            }
 
             using (Stream stream = doc.OpenWriteStream(false))
             {
-                long left = context.Request.ContentLength64;
+                long left = contentLength;
                 byte[] buffer = new byte[4096];
                 while (left > 0)
                 {
