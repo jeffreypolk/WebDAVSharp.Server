@@ -61,7 +61,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             IWebDavStoreCollection parentCollection = GetParentCollection(server, store, context.Request.Url);
 
             // Gets the item name from the url
-            string itemName = Uri.UnescapeDataString(context.Request.Url.Segments.Last().TrimEnd('/', '\\'));
+            string itemName = context.Request.Url.GetLastSegment();
 
             IWebDavStoreItem item = parentCollection.GetItemByName(itemName);
             IWebDavStoreDocument doc;
