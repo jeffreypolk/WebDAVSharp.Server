@@ -103,7 +103,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             String name = null;
             try
             {
-                name = Uri.UnescapeDataString(childUri.Segments.Last().TrimEnd('/', '\\'));
+                name = childUri.GetLastSegment(); 
                 item = collection.GetItemByName(name);
             }
             catch (UnauthorizedAccessException)
