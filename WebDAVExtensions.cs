@@ -40,6 +40,19 @@ namespace WebDAVSharp.Server
             return new Uri(url.Substring(0, index + 1));
         }
 
+        public static String GetLastSegment(this Uri uri)
+        {
+            var segment = uri.AbsoluteUri
+               .Split('\\', '/')
+               .Select(s => s.Trim('\\', '/'))
+               .Where(s => !String.IsNullOrWhiteSpace(s))
+               .LastOrDefault();
+
+            if (!String.IsNullOrEmpty(segment))
+                segment = Uri.UnescapeDataString(segment);
+            return segment;
+        }
+
         /// <summary>
         /// Sends a simple response with a specified HTTP status code but no content.
         /// </summary>
@@ -150,16 +163,18 @@ namespace WebDAVSharp.Server
             IWebDavStoreItem item = null;
             if (prefixUri.Segments.Length == uri.Segments.Length)
                 return collection;
-            
-            for (int index = prefixUri.Segments.Length; index < uri.Segments.Length; index++)
+
+            string[] segments = SplitUri(uri, prefixUri);
+
+            for (int index = 0; index < segments.Length; index++)
             {
-                string segmentName = Uri.UnescapeDataString(uri.Segments[index]).TrimEnd('/', '\\');
-                
+                string segmentName = Uri.UnescapeDataString(segments[index]);
+
                 IWebDavStoreItem nextItem = collection.GetItemByName(segmentName);
                 if (nextItem == null)
                     throw new WebDavNotFoundException(String.Format("Cannot find item {0} from collection {1}", segmentName, collection.ItemPath)); //throw new WebDavConflictException();
 
-                if (index == uri.Segments.Length - 1)
+                if (index == segments.Length - 1)
                     item = nextItem;
                 else
                 {
@@ -173,6 +188,15 @@ namespace WebDAVSharp.Server
                 throw new WebDavNotFoundException(String.Format("Unable to find {0}", uri));
 
             return item;
+        }
+
+        private static string[] SplitUri(Uri uri, Uri prefixUri)
+        {
+            return uri.AbsoluteUri.Substring(prefixUri.AbsoluteUri.Length)
+                .Split('\\', '/')
+                .Select(s => s.Trim('\\', '/'))
+                .Where(s => !String.IsNullOrWhiteSpace(s))
+                .ToArray();
         }
     }
 }

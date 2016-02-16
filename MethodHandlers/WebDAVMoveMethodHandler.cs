@@ -77,7 +77,7 @@ namespace WebDAVSharp.Server.MethodHandlers
 
             bool isNew = true;
 
-            string destinationName = Uri.UnescapeDataString(destinationUri.Segments.Last().TrimEnd('/', '\\'));
+            string destinationName = destinationUri.GetLastSegment();
             IWebDavStoreItem destination = destinationParentCollection.GetItemByName(destinationName);
             if (destination != null)
             {
