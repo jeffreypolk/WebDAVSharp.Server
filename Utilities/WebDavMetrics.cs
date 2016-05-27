@@ -13,7 +13,7 @@ namespace WebDAVSharp.Server.Utilities
     internal static class WebDavMetrics
     {
 
-        private static readonly Timer _callTimer = Metric.Timer("Web Dav Calls", Unit.Calls);
+        private static readonly Timer _callTimer = Metric.Timer("WebDav Calls", Unit.Calls);
 
         /// <summary>
         /// Used to 
