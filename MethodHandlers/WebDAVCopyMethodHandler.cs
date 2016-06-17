@@ -54,7 +54,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                    IWebDavStore store,
                    XmlDocument request,
                    XmlDocument response)
-        {            
+        {
             IWebDavStoreItem source = context.Request.Url.GetItem(server, store);
             if (source is IWebDavStoreDocument || source is IWebDavStoreCollection)
                 CopyItem(server, context, store, source);
@@ -82,7 +82,7 @@ namespace WebDAVSharp.Server.MethodHandlers
 
             string destinationName = destinationUri.GetLastSegment();
             IWebDavStoreItem destination = destinationParentCollection.GetItemByName(destinationName);
-            
+
             if (destination != null)
             {
                 if (source.ItemPath == destination.ItemPath)
