@@ -75,6 +75,7 @@
     <Reference Include="System.Net" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapters\AuthenticationTypes\HttpListenerAnyonymousAdapter.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="Adapters\IHttpListenerContext.cs" />
     <Compile Include="Adapters\IHttpListenerRequest.cs" />
     <Compile Include="Adapters\IHttpListenerResponse.cs" />
+    <Compile Include="Exceptions\WebDavBadRequestException.cs" />
     <Compile Include="Exceptions\WebDavLockedException.cs" />
     <Compile Include="Exceptions\WebDavLengthRequiredException.cs" />
     <Compile Include="Exceptions\WebDavUnsupportedMediaTypeException.cs" />
