@@ -473,8 +473,9 @@ namespace WebDAVSharp.Server
                     {
                         throw;
                     }
-                    catch (UnauthorizedAccessException)
+                    catch (UnauthorizedAccessException ex)
                     {
+                        _log.InfoFormat("Unauthorized: " + ex.Message);
                         throw new WebDavUnauthorizedException();
                     }
                     catch (FileNotFoundException ex)

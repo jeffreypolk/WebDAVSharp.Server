@@ -10,6 +10,7 @@ using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Stores;
 using WebDAVSharp.Server.Utilities;
 using log4net;
+using System.Xml.Linq;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
@@ -68,7 +69,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             // Initiate the XmlNamespaceManager and the XmlNodes
             XmlNamespaceManager manager = null;
             XmlNode propNode = null;
-
+            XDocument requestXDocument = null;
             // try to read the body
             try
             {
@@ -94,6 +95,8 @@ namespace WebDAVSharp.Server.MethodHandlers
 
                         propNode = request.DocumentElement.SelectSingleNode("D:set/D:prop", manager);
                     }
+
+                    requestXDocument = XDocument.Parse(requestBody);
                 }
             }
             catch (Exception ex)
@@ -111,9 +114,24 @@ namespace WebDAVSharp.Server.MethodHandlers
             // Get the item from the collection
             IWebDavStoreItem item = GetItemFromCollection(collection, context.Request.Url);
 
-            //Alk: Original code use directly file info to grab some properties that were not used.
-            WebDavItemInfo info = item.GetDocumentInfo();
-
+            //we need to get properties to set 
+            List<WebDavProperty> propertiesToSet = new List<WebDavProperty>();
+            if (requestXDocument != null)
+            {
+                foreach (XElement propertySet in requestXDocument.Descendants()
+                    .Where(n => n.Name.LocalName == "set"))
+                {
+                    //this is a property to set
+                    XElement propSetNode = propertySet.Elements().First().Elements().First();
+                    propertiesToSet.Add (new WebDavProperty() {
+                        Name = propSetNode.Name.LocalName,
+                        Namespace = propSetNode.Name.NamespaceName,
+                        Value = propSetNode.Value
+                    });
+                }
+            }
+            item.SetProperties(propertiesToSet);
+          
             /***************************************************************************************************
              * Create the body for the response
              ***************************************************************************************************/

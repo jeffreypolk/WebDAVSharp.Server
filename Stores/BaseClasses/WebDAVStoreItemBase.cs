@@ -211,6 +211,24 @@ namespace WebDAVSharp.Server.Stores.BaseClasses
             return null;
         }
 
+        /// <summary>
+        /// Set properties, it should be implemented by derived classes
+        /// </summary>
+        /// <param name="propertiesToSet"></param>
+        public virtual void SetProperties(IEnumerable<WebDavProperty> propertiesToSet)
+        {
+            
+        }
+
+        /// <summary>
+        /// Set properties, it should be implemented by derived classes
+        /// </summary>
+        /// <param name="property">The property we want to retrieve value</param>
+        public virtual String GetProperty(WebDavProperty property)
+        {
+            return String.Empty;
+        }
+
         #endregion
     }
 }

@@ -109,16 +109,17 @@ namespace WebDAVSharp.Server.MethodHandlers
             }
 
             // Get the XmlDocument from the request
-           
+            var requestDocument = GetXmlDocument(context.Request);
+
             // See what is requested
             _requestedProperties = new List<WebDavProperty>();
-            if (request.DocumentElement != null)
+            if (requestDocument != null && requestDocument.DocumentElement != null)
             {
-                if (request.DocumentElement.LocalName != "propfind")
+                if (requestDocument.DocumentElement.LocalName != "propfind")
                     WebDavServer.Log.Debug("PROPFIND method without propfind in xml document");
                 else
                 {
-                    XmlNode n = request.DocumentElement.FirstChild;
+                    XmlNode n = requestDocument.DocumentElement.FirstChild;
                     if (n == null)
                         WebDavServer.Log.Debug("propfind element without children");
                     else
@@ -241,10 +242,11 @@ Response:
         /// </returns>
         private static XmlDocument GetXmlDocument(IHttpListenerRequest request)
         {
+            string requestBody = "";
             try
             {
                 StreamReader reader = new StreamReader(request.InputStream, Encoding.UTF8);
-                string requestBody = reader.ReadToEnd();
+                requestBody = reader.ReadToEnd();
                 reader.Close();
 
                 if (!String.IsNullOrEmpty(requestBody))
@@ -254,9 +256,10 @@ Response:
                     return xmlDocument;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                WebDavServer.Log.Warn("XmlDocument has not been read correctly");
+                WebDavServer.Log.WarnFormat("XmlDocument has not been read correctly: {0}", requestBody);
+                throw new WebDavBadRequestException("Malformed XML", ex);
             }
 
             return new XmlDocument();
@@ -448,7 +451,7 @@ Response:
                 case "ishidden":
                     return webDavStoreItem.Hidden.ToString(CultureInfo.InvariantCulture);
                 default:
-                    return String.Empty;
+                    return webDavStoreItem.GetProperty(davProperty);
             }
         }
 
