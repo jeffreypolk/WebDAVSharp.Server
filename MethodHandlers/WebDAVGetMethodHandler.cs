@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Web;
 using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
@@ -67,6 +68,37 @@ namespace WebDAVSharp.Server.MethodHandlers
             if (doc == null)
                 throw new WebDavNotFoundException(string.Format("Cannot find document item  {0}", context.Request.Url));
 
+            context.Response.SetEtag(doc.Etag);
+            context.Response.SetLastModified(doc.ModificationDate);
+            var extension = Path.GetExtension(doc.ItemPath);
+            context.Response.AppendHeader("Content-Type", MimeMapping.GetMimeMapping(extension));
+
+            context.Response.AppendHeader("Cache-Control", "no-cache");
+            context.Response.AppendHeader("Pragma", "no-cache");
+            context.Response.AppendHeader("Expires", "-1");
+            context.Response.AppendHeader("Accept-Ranges", "bytes");
+            context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+            context.Response.AppendHeader("Access-Control-Allow-Credentials", "true");
+            context.Response.AppendHeader("Access-Control-Allow-Methods", "ACL, CANCELUPLOAD, CHECKIN, CHECKOUT, COPY, DELETE, GET, HEAD, LOCK, MKCALENDAR, MKCOL, MOVE, OPTIONS, POST, PROPFIND, PROPPATCH, PUT, REPORT, SEARCH, UNCHECKOUT, UNLOCK, UPDATE, VERSION-CONTROL");
+            context.Response.AppendHeader("Access-Control-Allow-Headers", "Overwrite, Destination, Content-Type, Depth, User-Agent, Translate, Range, Content-Range, Timeout, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Location, Lock-Token, If");
+            context.Response.AppendHeader("X-Engine", ".NETWebDav");
+            context.Response.AppendHeader("MS-Author-Via", "DAV");
+            context.Response.AppendHeader("Access-Control-Max-Age", "2147483647");
+            context.Response.AppendHeader("Public", "");
+
+
+            var ifModifiedSince = context.Request.Headers["If-Modified-Since"];
+            var ifNoneMatch = context.Request.Headers["If-None-Match"];
+            if (ifNoneMatch != null)
+            {
+                if (ifNoneMatch == doc.Etag)
+                {
+                    context.Response.StatusCode = 304;
+                    context.Response.Close();
+                    return;
+                }
+            }
+
             long docSize = doc.Size;
             if (docSize == 0)
             {
@@ -95,7 +127,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                     context.Response.OutputStream.Flush();
                 }
             }
-            
+
             context.Response.Close();
         }
 
