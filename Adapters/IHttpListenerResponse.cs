@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace WebDAVSharp.Server.Adapters
@@ -86,7 +88,19 @@ namespace WebDAVSharp.Server.Adapters
         /// <param name="name">The name of the HTTP header to append the <paramref name="value" /> to.</param>
         /// <param name="value">The value to append to the <paramref name="name" /> header.</param>
         void AppendHeader(string name, string value);
-        
+
+        /// <summary>
+        /// Set the Etag for this specific request.
+        /// </summary>
+        /// <param name="etag"></param>
+        void SetEtag(String etag);
+
+        /// <summary>
+        /// Set last-modified header.
+        /// </summary>
+        /// <param name="date"></param>
+        void SetLastModified(DateTime date);
+
         /// <summary>
         /// 
         /// </summary>
