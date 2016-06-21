@@ -21,9 +21,23 @@ namespace WebDAVSharp.Server.MethodHandlers
 
         //private static readonly List<string> verbsAllowed = new List<string> { "GET", "POST", "OPTIONS", "HEAD", "MKCOL", "PUT", "PROPFIND", "PROPPATCH", "DELETE", "MOVE", "COPY", "GETLIB", "LOCK", "UNLOCK" };
 
-        private static readonly List<string> verbsAllowed = new List<string> { "OPTIONS", "GET", "HEAD", "DELETE", "PROPFIND", "PUT", "PROPPATCH", "COPY", "DELETE", "MOVE", "MKCOL" };
+        private static readonly List<string> verbsAllowed = new List<string> {
+            "OPTIONS",
+            "GET",
+            "HEAD",
+            "DELETE",
+            "PROPFIND",
+            "PUT",
+            "PROPPATCH",
+            "COPY",
+            "DELETE",
+            "MOVE",
+            "MKCOL",
+            "POST",
+            "REPORT",
+            "SEARCH" };
 
-        private static readonly List<string> verbsPublic = new List<string> { "OPTIONS", "GET", "HEAD", "PROPFIND", "PROPPATCH", "MKCOL", "PUT", "DELETE", "COPY", "MOVE", "LOCK", "UNLOCK" };
+        //private static readonly List<string> verbsPublic = new List<string> { "OPTIONS", "GET", "HEAD", "PROPFIND", "PROPPATCH", "MKCOL", "PUT", "DELETE", "COPY", "MOVE", "LOCK", "UNLOCK" };
 
         #endregion
 
@@ -73,7 +87,7 @@ namespace WebDAVSharp.Server.MethodHandlers
             }
             context.Response.AppendHeader("Content-Type", "text /html; charset=UTF-8");
             context.Response.AppendHeader("Allow", baseVerbs);
-
+            context.Response.AppendHeader("Public", baseVerbs);
             //foreach (string verb in verbsAllowed)
             //    context.Response.AppendHeader("Allow", verb);
 

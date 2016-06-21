@@ -44,7 +44,7 @@ namespace WebDAVSharp.Server
 
         private Thread _thread;
 
-        private const string DavHeaderVersion1And3 = "1, 3, extended-mkcol";
+        private const string DavHeaderVersion1_2_3 = "1, 2, 3";
         private const string DavHeaderVersion1_2_and1Extended = "1,2,1#extend";
 
         private string _davHader = DavHeaderVersion1_2_and1Extended;
@@ -80,7 +80,13 @@ namespace WebDAVSharp.Server
             set
             {
                 WebDavStoreItemLock.LockEnabled = value;
+                UpdateDavHeader();
             }
+        }
+
+        private void UpdateDavHeader()
+        {
+            _davHader = WebDavStoreItemLock.LockEnabled ? DavHeaderVersion1_2_3 : DavHeaderVersion1_2_and1Extended;
         }
 
         /// <summary>
@@ -189,6 +195,7 @@ namespace WebDAVSharp.Server
                 };
             _methodHandlers = handlersWithNames.ToDictionary(v => v.name, v => v.methodHandler);
 
+            UpdateDavHeader();
         }
 
         /// <summary>
@@ -416,6 +423,12 @@ namespace WebDAVSharp.Server
             IHttpListenerContext context = (IHttpListenerContext)state;
             using (WebDavMetrics.GetMetricCallContext(context.Request.HttpMethod.ToString()))
             {
+                String xLitmusTest = "";
+                var xLitmus = context.Request.Headers["X-litmus"];
+                if (xLitmus != null)
+                {
+                    xLitmusTest = String.Format("X-LITMUS[{0}]: ", xLitmus);
+                }
                 OnProcessRequestStarted(context);
                 Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
 
@@ -451,20 +464,18 @@ namespace WebDAVSharp.Server
 
                         if (_log.IsDebugEnabled)
                         {
-                            _log.DebugFormat("WEB-DAV-CALL-ENDED: {0}\r\nREQUEST HEADER\r\n{1}\r\nRESPONSE HEADER\r\n{2}\r\nrequest:{3}\r\nresponse{4}",
-                                callInfo,
-                                requestHader,
-                                context.Response.DumpHeaders(),
-                                request.Beautify(),
-                                response.Beautify());
+                            string message = CreateLogMessage(context, callInfo, request, response, requestHader, xLitmusTest);
+                            _log.Debug(message);
+
                         }
                     }
                     catch (WebDavException)
                     {
                         throw;
                     }
-                    catch (UnauthorizedAccessException)
+                    catch (UnauthorizedAccessException ex)
                     {
+                        _log.InfoFormat("Unauthorized: " + ex.Message);
                         throw new WebDavUnauthorizedException();
                     }
                     catch (FileNotFoundException ex)
@@ -492,15 +503,17 @@ namespace WebDAVSharp.Server
                 {
                     if (ex is WebDavNotFoundException)
                     {
-                        //not found exception is quite common, Windows explorer often ask for files
-                        //that are not there 
-                        _log.Debug(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
-                            callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
+                        //not found exception is quite common, Windows explorer often ask for files that are not there 
+                        if (_log.IsDebugEnabled)
+                        {
+                            string message = CreateLogMessage(context, callInfo, request, response, requestHader, xLitmusTest);
+                            _log.Debug(message);
+                        }
                     }
                     else
                     {
-                        _log.Warn(String.Format("WEB-DAV-CALL-ENDED: {0}\r\nHeader:{1}:\r\nrequest:{2}\r\nresponse{3}",
-                            callInfo, requestHader, request.Beautify(), response.Beautify()), ex);
+                        string message = CreateLogMessage(context, callInfo, request, response, requestHader, xLitmusTest);
+                        _log.Warn(message, ex);
                     }
 
                     SendResponseForException(context, ex);
@@ -511,6 +524,18 @@ namespace WebDAVSharp.Server
                     OnProcessRequestCompleted(context);
                 }
             }
+        }
+
+        private static string CreateLogMessage(IHttpListenerContext context, string callInfo, XmlDocument request, XmlDocument response, StringBuilder requestHader, String xLitmusTest)
+        {
+            var message = String.Format("{5}WEB-DAV-CALL-ENDED: {0}\r\nREQUEST HEADER\r\n{1}\r\nRESPONSE HEADER\r\n{2}\r\nrequest:{3}\r\nresponse{4}",
+                callInfo,
+                requestHader,
+                context.Response.DumpHeaders(),
+                request.Beautify(),
+                response.Beautify(),
+                xLitmusTest);
+            return message;
         }
 
         private void SendResponseForException(IHttpListenerContext context, WebDavException ex)

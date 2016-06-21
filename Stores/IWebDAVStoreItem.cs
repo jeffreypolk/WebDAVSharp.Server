@@ -126,5 +126,18 @@ namespace WebDAVSharp.Server.Stores
         /// <returns>List of properties grouped by namespaces, if the object does not 
         /// support custom properties it can return null.</returns>
         List<WebDavCustomProperties> GetCustomProperties();
+
+        /// <summary>
+        /// Set a series of properties into webdav item
+        /// </summary>
+        /// <param name="propertiesToSet">List of properties to set</param>
+        void SetProperties(IEnumerable<WebDavProperty> propertiesToSet);
+
+        /// <summary>
+        /// Gets a property from webdav item
+        /// </summary>
+        /// <param name="davProperty"></param>
+        /// <returns></returns>
+        string GetProperty(WebDavProperty davProperty);
     }
 }
