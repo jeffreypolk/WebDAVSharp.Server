@@ -88,6 +88,20 @@ namespace WebDAVSharp.Server.MethodHandlers
             context.Response.AppendHeader("Content-Type", "text /html; charset=UTF-8");
             context.Response.AppendHeader("Allow", baseVerbs);
             context.Response.AppendHeader("Public", baseVerbs);
+
+            context.Response.AppendHeader("Cache-Control", "no-cache");
+            context.Response.AppendHeader("Pragma", "no-cache");
+            context.Response.AppendHeader("Expires", "-1");
+            context.Response.AppendHeader("Accept-Ranges", "bytes");
+            context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+            context.Response.AppendHeader("Access-Control-Allow-Credentials", "true");
+            context.Response.AppendHeader("Access-Control-Allow-Methods", "ACL, CANCELUPLOAD, CHECKIN, CHECKOUT, COPY, DELETE, GET, HEAD, LOCK, MKCALENDAR, MKCOL, MOVE, OPTIONS, POST, PROPFIND, PROPPATCH, PUT, REPORT, SEARCH, UNCHECKOUT, UNLOCK, UPDATE, VERSION-CONTROL");
+            context.Response.AppendHeader("Access-Control-Allow-Headers", "Overwrite, Destination, Content-Type, Depth, User-Agent, Translate, Range, Content-Range, Timeout, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Location, Lock-Token, If");
+            context.Response.AppendHeader("X-Engine", ".NETWebDav");
+            context.Response.AppendHeader("MS-Author-Via", "DAV");
+            context.Response.AppendHeader("Access-Control-Max-Age", "2147483647");
+            context.Response.AppendHeader("Public", "");
+
             //foreach (string verb in verbsAllowed)
             //    context.Response.AppendHeader("Allow", verb);
 

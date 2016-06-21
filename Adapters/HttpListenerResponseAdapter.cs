@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace WebDAVSharp.Server.Adapters
@@ -143,6 +144,21 @@ namespace WebDAVSharp.Server.Adapters
         public void AppendHeader(string name, string value)
         {
             _response.AppendHeader(name, value);
+        }
+
+        public void SetEtag(String etag)
+        {
+            _response.Headers.Add("ETag", etag);
+        }
+
+        public void SetLastModified(DateTime date)
+        {
+            _response.Headers.Add("Last-Modified", GetLastModifiedFromDate(date));
+        }
+
+        public static String GetLastModifiedFromDate(DateTime date)
+        {
+            return date.ToUniversalTime().ToString("ddd, dd MMM yyyy hh:mm:ss G\\MT", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         public string DumpHeaders()

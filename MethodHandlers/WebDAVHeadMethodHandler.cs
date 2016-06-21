@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Web;
 using System.Xml;
@@ -76,7 +77,19 @@ namespace WebDAVSharp.Server.MethodHandlers
                 // Get the item from the collection
                 item = GetItemFromCollection(collection, context.Request.Url);
             }
-           
+
+            if (item is IWebDavStoreDocument)
+            {
+                var doc = (IWebDavStoreDocument)item;
+                context.Response.SetEtag(doc.Etag);
+                context.Response.SetLastModified(doc.ModificationDate);
+                var extension = Path.GetExtension(doc.ItemPath);
+                context.Response.AppendHeader("Content-Type", MimeMapping.GetMimeMapping(extension));
+            }
+            else
+            {
+                context.Response.AppendHeader("Content-Type", "text/html");
+            }
             /***************************************************************************************************
             * Send the response
             ***************************************************************************************************/
@@ -87,8 +100,21 @@ namespace WebDAVSharp.Server.MethodHandlers
 
             // set the headers of the response
             context.Response.ContentLength64 = 0;
-            context.Response.AppendHeader("Content-Type", "text/html");
-            context.Response.AppendHeader("Last-Modified", item.ModificationDate.ToUniversalTime().ToString("R"));
+
+          
+
+            context.Response.AppendHeader("Cache-Control", "no-cache");
+            context.Response.AppendHeader("Pragma", "no-cache");
+            context.Response.AppendHeader("Expires", "-1");
+            context.Response.AppendHeader("Accept-Ranges", "bytes");
+            context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+            context.Response.AppendHeader("Access-Control-Allow-Credentials", "true");
+            context.Response.AppendHeader("Access-Control-Allow-Methods", "ACL, CANCELUPLOAD, CHECKIN, CHECKOUT, COPY, DELETE, GET, HEAD, LOCK, MKCALENDAR, MKCOL, MOVE, OPTIONS, POST, PROPFIND, PROPPATCH, PUT, REPORT, SEARCH, UNCHECKOUT, UNLOCK, UPDATE, VERSION-CONTROL");
+            context.Response.AppendHeader("Access-Control-Allow-Headers", "Overwrite, Destination, Content-Type, Depth, User-Agent, Translate, Range, Content-Range, Timeout, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Location, Lock-Token, If");
+            context.Response.AppendHeader("X-Engine", ".NETWebDav");
+            context.Response.AppendHeader("MS-Author-Via", "DAV");
+            context.Response.AppendHeader("Access-Control-Max-Age", "2147483647");
+            context.Response.AppendHeader("Public", "");
 
             context.Response.Close();
         }
