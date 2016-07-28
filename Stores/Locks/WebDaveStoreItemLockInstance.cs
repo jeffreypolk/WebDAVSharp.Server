@@ -117,6 +117,46 @@ namespace WebDAVSharp.Server.Stores.Locks
         }
 
         /// <summary>
+        /// Constructor used to rebuild the object without passing extra ref info.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="logicalLockKey"></param>
+        /// <param name="userAgent"></param>
+        /// <param name="lockscope"></param>
+        /// <param name="locktype"></param>
+        /// <param name="owner"></param>
+        /// <param name="requestedlocktimeout"></param>
+        /// <param name="token"></param>
+        /// <param name="requestdocument"></param>
+        /// <param name="depth"></param>
+        /// <param name="expirationDate"></param>
+        public WebDaveStoreItemLockInstance(
+             Uri path,
+             String logicalLockKey,
+             String userAgent,
+             WebDavLockScope lockscope,
+             WebDavLockType locktype,
+             string owner,
+             string requestedlocktimeout,
+             string token,
+             XmlDocument requestdocument,
+             int depth,
+             DateTime? expirationDate)
+        {
+            Path = path;
+            LogicalLockKey = logicalLockKey;
+            UserAgent = userAgent;
+            LockScope = lockscope;
+            LockType = locktype;
+            Owner = owner;
+            Token = token;
+            RequestDocument = requestdocument;
+            Depth = depth;
+            RequestedTimeout = requestedlocktimeout;
+            this.ExpirationDate = ExpirationDate;
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="path"></param>
@@ -130,15 +170,15 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// <param name="requestdocument"></param>
         /// <param name="depth"></param>
         public WebDaveStoreItemLockInstance(
-            Uri path, 
+            Uri path,
             String logicalLockKey,
             String userAgent,
             WebDavLockScope lockscope,
-            WebDavLockType locktype, 
-            string owner, 
-            ref string requestedlocktimeout, 
-            ref string token, 
-            XmlDocument requestdocument, 
+            WebDavLockType locktype,
+            string owner,
+            ref string requestedlocktimeout,
+            ref string token,
+            XmlDocument requestdocument,
             int depth)
         {
             Path = path;
