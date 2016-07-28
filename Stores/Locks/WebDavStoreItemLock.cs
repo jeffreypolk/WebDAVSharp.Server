@@ -307,6 +307,22 @@ namespace WebDAVSharp.Server.Stores.Locks
         }
 
         /// <summary>
+        /// Clear all locks on a given path, it is usefulf for deleted object.
+        /// </summary>
+        /// <param name="path"></param>
+        public static void ClearLocks(Uri path)
+        {
+            lock (ObjectLocks)
+            {
+                if (ObjectLocks.ContainsKey(path))
+                {
+                    ObjectLocks.Remove(path);
+                }
+            }
+            LockPersister.Clear(path);
+        }
+
+        /// <summary>
         /// Returns all the locks on the path
         /// </summary>
         /// <param name="path">URI to resource</param>

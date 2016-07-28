@@ -25,6 +25,12 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// <param name="uri"></param>
         /// <returns></returns>
         IEnumerable<WebDaveStoreItemLockInstance> Load(Uri uri);
+
+        /// <summary>
+        /// Clear all locks for given path.
+        /// </summary>
+        /// <param name="path"></param>
+        void Clear(Uri path);
     }
 
     /// <summary>
@@ -45,6 +51,15 @@ namespace WebDAVSharp.Server.Stores.Locks
         private NullLockPersister()
         {
 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="path"></param>
+        public void Clear(Uri path)
+        {
+            
         }
 
         /// <summary>
