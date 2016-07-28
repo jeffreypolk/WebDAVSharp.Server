@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Xml;
 using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Stores;
+using WebDAVSharp.Server.Stores.Locks;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
@@ -59,6 +60,9 @@ namespace WebDAVSharp.Server.MethodHandlers
 
             // Deletes the item
             collection.Delete(item);
+            //do not forget to clear all locks, if the object gets deleted there is no need to keep locks around.
+            WebDavStoreItemLock.ClearLocks(context.Request.Url);
+
             context.SendSimpleResponse();
         }
 

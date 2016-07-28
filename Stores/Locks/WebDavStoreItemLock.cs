@@ -36,23 +36,54 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// </summary>
         private static readonly Dictionary<Uri, List<WebDaveStoreItemLockInstance>> ObjectLocks = new Dictionary<Uri, List<WebDaveStoreItemLockInstance>>();
 
+        private static ILockPersister LockPersister { get; set; }
+
         #endregion
 
+        static WebDavStoreItemLock()
+        {
+            LockPersister = NullLockPersister.Instance;
+        }
+
         /// <summary>
-        /// This function removes any expired locks for the path.
+        /// 
+        /// </summary>
+        /// <param name="persister"></param>
+        public static void SetPersister(ILockPersister persister)
+        {
+            LockPersister = persister;
+        }
+
+        /// <summary>
+        /// This function removes any expired locks for the path and if there is no lock in memory it try to use
+        /// persister to load one
         /// </summary>
         /// <param name="path"></param>
-        private static void CleanLocks(Uri path)
+        private static void LoadAndCleanLocks(Uri path)
         {
             lock (ObjectLocks)
             {
                 if (!ObjectLocks.ContainsKey(path))
-                    return;
+                {
+                    var saved = LockPersister.Load(path);
+                    if (saved != null)
+                    {
+                        ObjectLocks[path] = saved.ToList();
+                    }
+                    else
+                    {
+                        ObjectLocks[path] = new List<WebDaveStoreItemLockInstance>();
+                    }
+                }
+
+                //Cleanup log if necessary
                 foreach (
                     WebDaveStoreItemLockInstance ilock in ObjectLocks[path].ToList()
                         .Where(ilock => ilock.ExpirationDate != null && (DateTime)ilock.ExpirationDate < DateTime.Now)
                     )
+                {
                     ObjectLocks[path].Remove(ilock);
+                }
             }
         }
 
@@ -67,7 +98,7 @@ namespace WebDAVSharp.Server.Stores.Locks
         public static int RefreshLock(Uri path, string locktoken, ref string requestedlocktimeout,
             out XmlDocument requestDocument)
         {
-            CleanLocks(path);
+            LoadAndCleanLocks(path);
             //Refreshing an existing lock
 
             //If a lock doesn't exist then lets just reply with a Precondition Failed.
@@ -92,6 +123,8 @@ namespace WebDAVSharp.Server.Stores.Locks
                 ilock.RefreshLock(ref requestedlocktimeout);
                 requestDocument = ilock.RequestDocument;
 
+                //I changed a lock need to save
+                LockPersister.Persist(path, ObjectLocks[path]);
                 return (int)HttpStatusCode.OK;
             }
         }
@@ -122,7 +155,7 @@ namespace WebDAVSharp.Server.Stores.Locks
             XmlDocument requestDocument, 
             int depth)
         {
-            CleanLocks(path);
+            LoadAndCleanLocks(path);
             WebDavServer.Log.Debug("Lock Requested Timeout:" + requestedlocktimeout);
             locktoken = string.Empty;
             lock (ObjectLocks)
@@ -141,7 +174,7 @@ namespace WebDAVSharp.Server.Stores.Locks
 
 
                 //if ObjectLocks doesn't contain the path, then this is a new lock and regardless
-                if (!ObjectLocks.ContainsKey(path))
+                if (ObjectLocks[path].Count == 0)
                 {
                     //Pay attention, we could have a lock in other path with the very same logical key.
                     var logicalKeyLocks = ObjectLocks.Values
@@ -162,7 +195,6 @@ namespace WebDAVSharp.Server.Stores.Locks
                             logicalKeyLocks.Any(l => l.LockScope == WebDavLockScope.Exclusive))
                             return 423;
                     }
-                    ObjectLocks.Add(path, new List<WebDaveStoreItemLockInstance>());
 
                     ObjectLocks[path].Add(new WebDaveStoreItemLockInstance(path,logicalLockKey, userAgent, lockscope, locktype, lockowner,
                         ref requestedlocktimeout, ref locktoken,
@@ -170,6 +202,7 @@ namespace WebDAVSharp.Server.Stores.Locks
 
                     WebDavServer.Log.DebugFormat("Created New Lock ({0}), URI {1} had no locks. Timeout: {2}", lockscope, path, requestedlocktimeout);
 
+                     LockPersister.Persist(path, ObjectLocks[path]);
                     return (int)HttpStatusCode.OK;
                 }
 
@@ -219,7 +252,7 @@ namespace WebDAVSharp.Server.Stores.Locks
                                        requestedlocktimeout);
 
                 #endregion
-
+                LockPersister.Persist(path, ObjectLocks[path]);
                 return (int)HttpStatusCode.OK;
             }
         }
@@ -233,7 +266,7 @@ namespace WebDAVSharp.Server.Stores.Locks
         /// <returns></returns>
         public static int UnLock(Uri path, string locktoken, string owner)
         {
-            CleanLocks(path);
+            LoadAndCleanLocks(path);
             if (string.IsNullOrEmpty(locktoken))
             {
                 WebDavServer.Log.DebugFormat("Unlock failed for {0}, No Token!.", path);
@@ -267,13 +300,26 @@ namespace WebDAVSharp.Server.Stores.Locks
                 //Remove the lock
                 ObjectLocks[path].Remove(ilock);
 
-                //if there are no locks left of the uri then remove it from ObjectLocks.
-                if (ObjectLocks[path].Count == 0)
-                    ObjectLocks.Remove(path);
-
                 WebDavServer.Log.DebugFormat("Unlock successful {0} token {1} owner {2}", path, locktoken, owner);
+                LockPersister.Persist(path, ObjectLocks[path]);
                 return (int)HttpStatusCode.NoContent;
             }
+        }
+
+        /// <summary>
+        /// Clear all locks on a given path, it is usefulf for deleted object.
+        /// </summary>
+        /// <param name="path"></param>
+        public static void ClearLocks(Uri path)
+        {
+            lock (ObjectLocks)
+            {
+                if (ObjectLocks.ContainsKey(path))
+                {
+                    ObjectLocks.Remove(path);
+                }
+            }
+            LockPersister.Clear(path);
         }
 
         /// <summary>
