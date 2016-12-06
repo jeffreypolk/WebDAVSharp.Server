@@ -122,12 +122,17 @@ namespace WebDAVSharp.Server.MethodHandlers
                     .Where(n => n.Name.LocalName == "set"))
                 {
                     //this is a property to set
-                    XElement propSetNode = propertySet.Elements().First().Elements().First();
-                    propertiesToSet.Add (new WebDavProperty() {
-                        Name = propSetNode.Name.LocalName,
-                        Namespace = propSetNode.Name.NamespaceName,
-                        Value = propSetNode.Value
-                    });
+                    var allPropertiesToSet = propertySet.Elements().First().Elements();
+                    foreach (var propSetNode in allPropertiesToSet)
+                    {
+                        propertiesToSet.Add(new WebDavProperty()
+                        {
+                            Name = propSetNode.Name.LocalName,
+                            Namespace = propSetNode.Name.NamespaceName,
+                            Value = propSetNode.Value
+                        });
+                    }
+                   
                 }
             }
             item.SetProperties(propertiesToSet);

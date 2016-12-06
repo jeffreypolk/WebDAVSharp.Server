@@ -402,9 +402,22 @@ namespace WebDAVSharp.Server
         /// <summary>
         /// Called after everything was processed, it can be used for doing specific
         /// cleanup for the real implementation.
+        /// It can also be used to log executed call with something different from the
+        /// standard log4net logger used by the library; this is the reason why this method
+        /// is accepting some information that can be directly used to log information
+        /// as <paramref name="callInfo"/>
         /// </summary>
         /// <param name="context"></param>
-        protected virtual void OnProcessRequestCompleted(IHttpListenerContext context)
+        /// <param name="callInfo">String with call information for better logging</param>
+        /// <param name="request">Xml document that contains the full request of the client</param>
+        /// <param name="response">Xml document that contains the full response returned to the client </param>
+        /// <param name="requestHeader">StringBuilder that contains the full request header</param>
+        protected virtual void OnProcessRequestCompleted(
+            IHttpListenerContext context, 
+            string callInfo, 
+            XmlDocument request, 
+            XmlDocument response, 
+            StringBuilder requestHeader)
         {
 
         }
@@ -421,6 +434,8 @@ namespace WebDAVSharp.Server
         private void ProcessRequest(object state)
         {
             IHttpListenerContext context = (IHttpListenerContext)state;
+            XmlDocument request = null;
+            XmlDocument response = null;
             using (WebDavMetrics.GetMetricCallContext(context.Request.HttpMethod.ToString()))
             {
                 String xLitmusTest = "";
@@ -435,14 +450,13 @@ namespace WebDAVSharp.Server
                 String callInfo = String.Format("{0} : {1} : {2}", context.Request.HttpMethod, context.Request.RemoteEndPoint, context.Request.Url);
                 //_log.DebugFormat("CALL START: {0}", callInfo);
                 log4net.ThreadContext.Properties["webdav-request"] = callInfo;
-                XmlDocument request = null;
-                XmlDocument response = null;
-                StringBuilder requestHader = new StringBuilder();
+
+                StringBuilder requestHeader = new StringBuilder();
                 if (_log.IsDebugEnabled)
                 {
                     foreach (String header in context.Request.Headers)
                     {
-                        requestHader.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
+                        requestHeader.AppendFormat("{0}: {1}\r\n", header, context.Request.Headers[header]);
                     }
                 }
 
@@ -464,7 +478,7 @@ namespace WebDAVSharp.Server
 
                         if (_log.IsDebugEnabled)
                         {
-                            string message = CreateLogMessage(context, callInfo, request, response, requestHader, xLitmusTest);
+                            string message = CreateLogMessage(context, callInfo, request, response, requestHeader, xLitmusTest);
                             _log.Debug(message);
 
                         }
@@ -506,13 +520,13 @@ namespace WebDAVSharp.Server
                         //not found exception is quite common, Windows explorer often ask for files that are not there 
                         if (_log.IsDebugEnabled)
                         {
-                            string message = CreateLogMessage(context, callInfo, request, response, requestHader, xLitmusTest);
+                            string message = CreateLogMessage(context, callInfo, request, response, requestHeader, xLitmusTest);
                             _log.Debug(message);
                         }
                     }
                     else
                     {
-                        string message = CreateLogMessage(context, callInfo, request, response, requestHader, xLitmusTest);
+                        string message = CreateLogMessage(context, callInfo, request, response, requestHeader, xLitmusTest);
                         _log.Warn(message, ex);
                     }
 
@@ -521,16 +535,16 @@ namespace WebDAVSharp.Server
                 finally
                 {
                     log4net.ThreadContext.Properties["webdav-request"] = null;
-                    OnProcessRequestCompleted(context);
+                    OnProcessRequestCompleted(context, callInfo, request, response, requestHeader);
                 }
             }
         }
 
-        private static string CreateLogMessage(IHttpListenerContext context, string callInfo, XmlDocument request, XmlDocument response, StringBuilder requestHader, String xLitmusTest)
+        private static string CreateLogMessage(IHttpListenerContext context, string callInfo, XmlDocument request, XmlDocument response, StringBuilder requestHeader, String xLitmusTest)
         {
             var message = String.Format("{5}WEB-DAV-CALL-ENDED: {0}\r\nREQUEST HEADER\r\n{1}\r\nRESPONSE HEADER\r\n{2}\r\nrequest:{3}\r\nresponse{4}",
                 callInfo,
-                requestHader,
+                requestHeader,
                 context.Response.DumpHeaders(),
                 request.Beautify(),
                 response.Beautify(),
