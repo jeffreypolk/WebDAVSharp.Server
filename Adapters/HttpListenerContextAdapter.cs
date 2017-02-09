@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace WebDAVSharp.Server.Adapters
@@ -15,7 +16,7 @@ namespace WebDAVSharp.Server.Adapters
         private readonly HttpListenerContext _context;
         private readonly HttpListenerRequestAdapter _request;
         private readonly HttpListenerResponseAdapter _response;
-
+        private readonly Dictionary<String, Object> _contextData;
         #endregion
 
         #region Public Functions
@@ -34,6 +35,7 @@ namespace WebDAVSharp.Server.Adapters
             _context = context;
             _request = new HttpListenerRequestAdapter(context.Request);
             _response = new HttpListenerResponseAdapter(context.Response);
+            _contextData = new Dictionary<string, object>();
         }
 
         #endregion
@@ -74,6 +76,30 @@ namespace WebDAVSharp.Server.Adapters
             {
                 return _response;
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public object GetContextData(string key)
+        {
+            Object data;
+            if (_contextData.TryGetValue(key, out data))
+                return data;
+
+            return null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="data"></param>
+        public void SetContextData(string key, object data)
+        {
+            _contextData[key] = data;
         }
 
         #endregion

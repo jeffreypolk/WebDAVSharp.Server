@@ -34,5 +34,19 @@ namespace WebDAVSharp.Server.Adapters
         {
             get;
         }
+
+        /// <summary>
+        /// Retrieve a context data set with <see cref="SetContextData(string, object)"/> method.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        object GetContextData(string key);
+
+        /// <summary>
+        /// Allow storing data for the current context.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="data"></param>
+        void SetContextData(string key, object data);
     }
 }
