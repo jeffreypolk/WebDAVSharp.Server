@@ -115,6 +115,7 @@
     <Compile Include="MethodHandlers\WebDavProppatchMethodHandler.cs" />
     <Compile Include="MethodHandlers\WebDavPutMethodHandler.cs" />
     <Compile Include="MethodHandlers\WebDavUnlockMethodHandler.cs" />
+    <Compile Include="Stores\IWebDavStoreCollectionExtended.cs" />
     <Compile Include="Stores\Locks\ILockPersister.cs" />
     <Compile Include="Stores\WebDavCustomProperties.cs" />
     <Compile Include="Stores\WebDavItemInfo.cs" />

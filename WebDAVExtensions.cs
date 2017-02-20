@@ -124,11 +124,8 @@ namespace WebDAVSharp.Server
         }
 
         /// <summary>
-        /// Retrieves a store item through the specified
-        /// <see cref="Uri" /> from the
-        /// specified
-        /// <see cref="WebDavServer" /> and
-        /// <see cref="IWebDavStore" />.
+        /// Retrieves a store item through the specified <see cref="Uri" /> from the
+        /// specified <see cref="WebDavServer" /> and <see cref="IWebDavStore" />.
         /// </summary>
         /// <param name="uri">The <see cref="Uri" /> to retrieve the store item for.</param>
         /// <param name="server">The <see cref="WebDavServer" /> that hosts the <paramref name="store" />.</param>
@@ -157,37 +154,62 @@ namespace WebDAVSharp.Server
             if (store == null)
                 throw new ArgumentNullException("store");
 
-            Uri prefixUri = uri.GetPrefixUri(server);
-            IWebDavStoreCollection collection = store.Root;
-
             IWebDavStoreItem item = null;
-            if (prefixUri.Segments.Length == uri.Segments.Length)
-                return collection;
-
-            string[] segments = SplitUri(uri, prefixUri);
-
-            for (int index = 0; index < segments.Length; index++)
+            Uri prefixUri = uri.GetPrefixUri(server);
+            if (CanResolveFullPath(uri.AbsoluteUri, store.Root))
             {
-                string segmentName = Uri.UnescapeDataString(segments[index]);
+                item = ((IWebDavStoreCollectionExtended)store.Root).GetItemByFullPath(uri.AbsoluteUri);
+            }
+            else
+            {
+                IWebDavStoreCollection collection = store.Root;
 
-                IWebDavStoreItem nextItem = collection.GetItemByName(segmentName);
-                if (nextItem == null)
-                    throw new WebDavNotFoundException(String.Format("Cannot find item {0} from collection {1}", segmentName, collection.ItemPath)); //throw new WebDavConflictException();
+                if (prefixUri.Segments.Length == uri.Segments.Length)
+                    return collection;
 
-                if (index == segments.Length - 1)
-                    item = nextItem;
-                else
+                string[] segments = SplitUri(uri, prefixUri);
+
+                for (int index = 0; index < segments.Length; index++)
                 {
-                    collection = nextItem as IWebDavStoreCollection;
-                    if (collection == null)
-                        throw new WebDavNotFoundException(String.Format("NextItem [{0}] is not a collection", nextItem.ItemPath));
+                    var remainingPath = String.Join("/", segments.Skip(index));
+                    if (CanResolveFullPath(remainingPath, collection))
+                    {
+                        item = ((IWebDavStoreCollectionExtended)collection).GetItemByFullPath(remainingPath);
+                        break;
+                    }
+                    else
+                    {
+                        string segmentName = Uri.UnescapeDataString(segments[index]);
+
+                        IWebDavStoreItem nextItem = collection.GetItemByName(segmentName);
+                        if (nextItem == null)
+                            throw new WebDavNotFoundException(String.Format("Cannot find item {0} from collection {1}", segmentName, collection.ItemPath)); //throw new WebDavConflictException();
+
+                        if (index == segments.Length - 1)
+                        {
+                            item = nextItem;
+                        }
+                        else
+                        {
+                            collection = nextItem as IWebDavStoreCollection;
+                            if (collection == null)
+                                throw new WebDavNotFoundException(String.Format("NextItem [{0}] is not a collection", nextItem.ItemPath));
+                        }
+                    }
                 }
             }
+
+
 
             if (item == null)
                 throw new WebDavNotFoundException(String.Format("Unable to find {0}", uri));
 
             return item;
+        }
+
+        private static bool CanResolveFullPath(String path, IWebDavStoreCollection collection)
+        {
+            return collection is IWebDavStoreCollectionExtended && ((IWebDavStoreCollectionExtended)collection).CanResolveFullPath(path);
         }
 
         private static string[] SplitUri(Uri uri, Uri prefixUri)
