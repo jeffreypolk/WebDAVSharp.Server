@@ -122,6 +122,7 @@
     <Compile Include="Stores\Locks\WebDavLockType.cs" />
     <Compile Include="Stores\Locks\WebDaveStoreItemLockInstance.cs" />
     <Compile Include="Stores\Locks\WebDavStoreItemLock.cs" />
+    <Compile Include="Utilities\StringUtils.cs" />
     <Compile Include="Utilities\LoggingUtils.cs" />
     <Compile Include="Utilities\Md5Util.cs" />
     <Compile Include="Stores\BaseClasses\WebDavStoreDocumentBase.cs" />

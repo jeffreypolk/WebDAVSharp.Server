@@ -7,6 +7,7 @@ using WebDAVSharp.Server.Adapters;
 using WebDAVSharp.Server.Exceptions;
 using WebDAVSharp.Server.Stores;
 using WebDAVSharp.Server.Stores.Locks;
+using WebDAVSharp.Server.Utilities;
 
 namespace WebDAVSharp.Server.MethodHandlers
 {
@@ -83,7 +84,7 @@ namespace WebDAVSharp.Server.MethodHandlers
                 var doc = (IWebDavStoreDocument)item;
                 context.Response.SetEtag(doc.Etag);
                 context.Response.SetLastModified(doc.ModificationDate);
-                var extension = Path.GetExtension(doc.ItemPath);
+                var extension = doc.ItemPath.GetFileExtensionSafe();
                 context.Response.AppendHeader("Content-Type", MimeMapping.GetMimeMapping(extension));
             }
             else
