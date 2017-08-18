@@ -17,14 +17,14 @@ Namespace Controllers
             'End If
 
             'runtime variables
-            Dim DocumentLocation As String = "C:\Development\Prototypes\WebDavSharp\docs"
+            Dim DocumentRoot As String = "C:\Development\Prototypes\WebDavSharp\docs"
             Dim WebDavRoot As String = "http://localhost:4303/WebDav/Index/a9e1e4ad-3691-436c-8680-d83be36d24c3/"
 
             'set up context with the MVC Request and Response objects
             Dim context As IHttpListenerContext = New HttpListenerContextAdapter(New Custom.HttpListenerContext(Request, Response))
 
             ' set up document store 
-            Dim store As IWebDavStore = New DiskStore.WebDavDiskStore(DocumentLocation)
+            Dim store As IWebDavStore = New DiskStore.WebDavDiskStore(DocumentRoot)
 
             'set up mock server
             Dim server As New WebDavServer(store, AuthType.Anonymous)
