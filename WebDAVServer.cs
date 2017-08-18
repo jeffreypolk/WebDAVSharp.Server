@@ -603,6 +603,7 @@ namespace WebDAVSharp.Server
         }
 
         /// <summary>
+        /// This method returns the item from the cache of IWebDavMethodHandler objects
         /// </summary>
         public IWebDavMethodHandler GetMethodHandler(string httpMethod)
         {
