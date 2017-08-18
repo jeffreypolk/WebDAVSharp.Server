@@ -20,7 +20,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>LOCK</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavLockMethodHandler : WebDavMethodHandlerBase
+    public class WebDavLockMethodHandler : WebDavMethodHandlerBase
     {
 
         #region Properties

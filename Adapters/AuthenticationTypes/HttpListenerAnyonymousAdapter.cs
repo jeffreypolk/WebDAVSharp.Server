@@ -9,11 +9,11 @@ using Microsoft.Win32.SafeHandles;
 
 namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
 {
-    class HttpListenerAnyonymousAdapter : WebDavDisposableBase, IHttpListener, IAdapter<HttpListener>
+    class HttpListenerAnyonymousAdapter : WebDavDisposableBase, IHttpListener, IAdapter<Custom.HttpListener>
     {
         public HttpListenerAnyonymousAdapter()
         {
-            AdaptedInstance = new HttpListener
+            AdaptedInstance = new Custom.HttpListener
             {
                 AuthenticationSchemes = AuthenticationSchemes.Anonymous,
                 UnsafeConnectionNtlmAuthentication = false
@@ -26,7 +26,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
                 AdaptedInstance.Close();
         }
 
-        public HttpListener AdaptedInstance
+        public Custom.HttpListener AdaptedInstance
         {
             get;
             private set;
@@ -41,7 +41,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
             int index = WaitHandle.WaitAny(new[] { abortEvent, ar.AsyncWaitHandle });
             if (index != 1)
                 return null;
-            HttpListenerContext context = AdaptedInstance.EndGetContext(ar);
+            Custom.HttpListenerContext context = AdaptedInstance.EndGetContext(ar);
             return new HttpListenerContextAdapter(context);
         }
 

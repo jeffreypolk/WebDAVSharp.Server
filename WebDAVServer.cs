@@ -581,6 +581,26 @@ namespace WebDAVSharp.Server
         }
 
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="url"></param>
+        public void SetUrlRoot(String url)
+        {
+            Listener.Prefixes.Add(url);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void SetIdentity(IHttpListenerContext context)
+        {
+            Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
+        }
+
+
         #endregion
     }
 }

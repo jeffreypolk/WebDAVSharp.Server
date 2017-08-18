@@ -12,7 +12,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>OPTIONS</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavOptionsMethodHandler : WebDavMethodHandlerBase
+    public class WebDavOptionsMethodHandler : WebDavMethodHandlerBase
     {
         #region Variables
 

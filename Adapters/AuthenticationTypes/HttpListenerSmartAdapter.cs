@@ -28,11 +28,11 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
     /// <see cref="IHttpListener" /> implementation wraps around a
     /// <see cref="HttpListener" /> instance.
     /// </summary>
-    internal sealed class HttpListenerSmartAdapter : WebDavDisposableBase, IHttpListener, IAdapter<HttpListener>
+    internal sealed class HttpListenerSmartAdapter : WebDavDisposableBase, IHttpListener, IAdapter<Custom.HttpListener>
     {
         #region Private Variables
 
-        private readonly HttpListener _listener;
+        private readonly Custom.HttpListener _listener;
 
         #endregion
 
@@ -43,7 +43,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
         /// <value>
         /// The adapted instance.
         /// </value>
-        public HttpListener AdaptedInstance
+        public Custom.HttpListener AdaptedInstance
         {
             get
             {
@@ -94,7 +94,7 @@ Kerberos can be only used with Local system or Network Service. NTLM will be use
                 _canSupportKerberos = false;
             }
             WebDavServer.Log.DebugFormat("_canSupportKerberos is {0}", _canSupportKerberos);
-            _listener = new HttpListener
+            _listener = new Custom.HttpListener
             {
                 AuthenticationSchemes = _supportedAuthScheme,
             };
@@ -159,7 +159,7 @@ Kerberos can be only used with Local system or Network Service. NTLM will be use
             IAsyncResult ar = _listener.BeginGetContext(null, null);
             int index = WaitHandle.WaitAny(new[] { abortEvent, ar.AsyncWaitHandle });
             if (index != 1) return null;
-            HttpListenerContext context = _listener.EndGetContext(ar);
+            Custom.HttpListenerContext context = _listener.EndGetContext(ar);
             return new HttpListenerContextAdapter(context);
         }
 

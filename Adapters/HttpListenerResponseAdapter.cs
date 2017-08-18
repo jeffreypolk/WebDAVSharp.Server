@@ -15,7 +15,7 @@ namespace WebDAVSharp.Server.Adapters
     {
         #region Private Variables
 
-        private readonly HttpListenerResponse _response;
+        private readonly Custom.HttpListenerResponse _response;
 
         #endregion
 
@@ -26,7 +26,7 @@ namespace WebDAVSharp.Server.Adapters
         /// <value>
         /// The adapted instance.
         /// </value>
-        public HttpListenerResponse AdaptedInstance
+        public Custom.HttpListenerResponse AdaptedInstance
         {
             get
             {
@@ -119,7 +119,7 @@ namespace WebDAVSharp.Server.Adapters
         /// <param name="response">The <see cref="HttpListenerResponse" /> to adapt for WebDAV#.</param>
         /// <exception cref="System.ArgumentNullException">Response</exception>
         /// <exception cref="ArgumentNullException"><paramref name="response" /> is <c>null</c>.</exception>
-        public HttpListenerResponseAdapter(HttpListenerResponse response)
+        public HttpListenerResponseAdapter(Custom.HttpListenerResponse response)
         {
         if (response == null)
             throw new ArgumentNullException("response");

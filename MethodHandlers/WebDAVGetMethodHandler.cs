@@ -13,7 +13,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>GET</c> HTTP method for WebDAV#.
     /// </summary>
-    internal sealed class WebDavGetMethodHandler : WebDavMethodHandlerBase
+    public class WebDavGetMethodHandler : WebDavMethodHandlerBase
     {
 
         #region Properties

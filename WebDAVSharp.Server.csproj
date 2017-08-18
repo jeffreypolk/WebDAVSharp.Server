@@ -89,6 +89,10 @@
     <Compile Include="Adapters\IHttpListenerContext.cs" />
     <Compile Include="Adapters\IHttpListenerRequest.cs" />
     <Compile Include="Adapters\IHttpListenerResponse.cs" />
+    <Compile Include="Custom\HttpListener.cs" />
+    <Compile Include="Custom\HttpListenerContext.cs" />
+    <Compile Include="Custom\HttpListenerRequest.cs" />
+    <Compile Include="Custom\HttpListenerResponse.cs" />
     <Compile Include="Exceptions\WebDavBadRequestException.cs" />
     <Compile Include="Exceptions\WebDavLockedException.cs" />
     <Compile Include="Exceptions\WebDavLengthRequiredException.cs" />

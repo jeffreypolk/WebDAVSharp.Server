@@ -15,7 +15,7 @@ namespace WebDAVSharp.Server.Adapters
     /// <remarks>
     /// The main purpose of this interface is to facilitate unit-testing.
     /// </remarks>
-    public interface IHttpListenerRequest : IAdapter<HttpListenerRequest>
+    public interface IHttpListenerRequest : IAdapter<Custom.HttpListenerRequest>
     {
         /// <summary>
         /// Gets the client IP address and port number from which the request originated.

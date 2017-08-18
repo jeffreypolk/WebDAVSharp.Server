@@ -14,7 +14,7 @@ namespace WebDAVSharp.Server.Adapters
     /// <remarks>
     /// The main purpose of this interface is to facilitate unit-testing.
     /// </remarks>
-    public interface IHttpListener : IAdapter<HttpListener>, IDisposable
+    public interface IHttpListener : IAdapter<Custom.HttpListener>, IDisposable
     {
         /// <summary>
         /// Waits for a request to come in to the web server and returns a

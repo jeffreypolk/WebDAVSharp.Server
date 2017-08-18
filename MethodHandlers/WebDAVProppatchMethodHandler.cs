@@ -17,7 +17,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>PROPPATCH</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavProppatchMethodHandler : WebDavMethodHandlerBase
+    public class WebDavProppatchMethodHandler : WebDavMethodHandlerBase
     {
 
         #region Properties

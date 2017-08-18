@@ -11,13 +11,16 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This is the base class for <see cref="IWebDavMethodHandler" /> implementations.
     /// </summary>
-    internal abstract class WebDavMethodHandlerBase : IWebDavMethodHandler
+    public abstract class WebDavMethodHandlerBase : IWebDavMethodHandler
     {
 
         #region Variables
 
         private const int DepthInfinity = -1;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public abstract IEnumerable<string> Names { get; }
         
         #endregion
@@ -71,6 +74,11 @@ namespace WebDAVSharp.Server.MethodHandlers
             return collection;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="collection"></param>
+        /// <returns></returns>
         public static string GetFullItemPath(IWebDavStoreCollection collection)
         {
             System.Text.StringBuilder sb = new System.Text.StringBuilder();
@@ -160,11 +168,21 @@ namespace WebDAVSharp.Server.MethodHandlers
             // else, return false
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public static string GetLockTokenIfHeader(IHttpListenerRequest request)
         {
             //(<urn:uuid:cfdc70da-7feb-4bfe-8cb7-18f97d8fecb1>)
             return request.Headers.AllKeys.Contains("If") ? request.Headers["If"].Substring(2, request.Headers["If"].Length-4) : string.Empty;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public static string GetLockTokenHeader(IHttpListenerRequest request)
         {
             if (!request.Headers.AllKeys.Contains("Lock-Token")) return string.Empty;
@@ -208,6 +226,14 @@ namespace WebDAVSharp.Server.MethodHandlers
             throw new WebDavConflictException(String.Format("Get destination header null. Request uri: {0} ", request.Url.AbsoluteUri));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="server"></param>
+        /// <param name="context"></param>
+        /// <param name="store"></param>
+        /// <param name="request"></param>
+        /// <param name="response"></param>
         public void ProcessRequest(
             WebDavServer server, 
             IHttpListenerContext context, 
@@ -220,6 +246,14 @@ namespace WebDAVSharp.Server.MethodHandlers
             OnProcessRequest(server, context, store, request, response);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="server"></param>
+        /// <param name="context"></param>
+        /// <param name="store"></param>
+        /// <param name="request"></param>
+        /// <param name="response"></param>
         protected abstract void OnProcessRequest(
             WebDavServer server,
             IHttpListenerContext context,

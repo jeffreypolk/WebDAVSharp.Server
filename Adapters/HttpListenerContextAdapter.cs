@@ -9,11 +9,11 @@ namespace WebDAVSharp.Server.Adapters
     /// <see cref="IHttpListenerContext" /> implementation wraps around a
     /// <see cref="HttpListenerContext" /> instance.
     /// </summary>
-    public sealed class HttpListenerContextAdapter : IHttpListenerContext, IAdapter<HttpListenerContext>
+    public sealed class HttpListenerContextAdapter : IHttpListenerContext, IAdapter<Custom.HttpListenerContext>
     {
         #region Private Variables
 
-        private readonly HttpListenerContext _context;
+        private readonly Custom.HttpListenerContext _context;
         private readonly HttpListenerRequestAdapter _request;
         private readonly HttpListenerResponseAdapter _response;
         private readonly Dictionary<String, Object> _contextData;
@@ -27,7 +27,7 @@ namespace WebDAVSharp.Server.Adapters
         /// <param name="context">The <see cref="HttpListenerContext" /> to adapt for WebDAV#.</param>
         /// <exception cref="System.ArgumentNullException">context</exception>
         /// <exception cref="ArgumentNullException"><paramref name="context" /> is <c>null</c>.</exception>
-        public HttpListenerContextAdapter(HttpListenerContext context)
+        public HttpListenerContextAdapter(Custom.HttpListenerContext context)
         {
             if (context == null)
                 throw new ArgumentNullException("context");
@@ -48,7 +48,7 @@ namespace WebDAVSharp.Server.Adapters
         /// <value>
         /// The adapted instance.
         /// </value>
-        public HttpListenerContext AdaptedInstance
+        public Custom.HttpListenerContext AdaptedInstance
         {
             get
             {

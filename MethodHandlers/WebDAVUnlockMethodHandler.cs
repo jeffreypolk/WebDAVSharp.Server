@@ -16,7 +16,7 @@ namespace WebDAVSharp.Server.MethodHandlers
     /// <summary>
     /// This class implements the <c>PUT</c> HTTP method for WebDAV#.
     /// </summary>
-    internal class WebDavUnlockMethodHandler : WebDavMethodHandlerBase
+    public class WebDavUnlockMethodHandler : WebDavMethodHandlerBase
     {
 
         #region Properties

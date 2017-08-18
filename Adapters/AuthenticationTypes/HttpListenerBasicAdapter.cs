@@ -10,7 +10,7 @@ using System.DirectoryServices.AccountManagement;
 
 namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
 {
-    class HttpListenerBasicAdapter : WebDavDisposableBase, IHttpListener, IAdapter<HttpListener>
+    class HttpListenerBasicAdapter : WebDavDisposableBase, IHttpListener, IAdapter<Custom.HttpListener>
     {
         #region Imports
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -23,7 +23,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
 
         public HttpListenerBasicAdapter()
         {
-            AdaptedInstance = new HttpListener
+            AdaptedInstance = new Custom.HttpListener
             {
                 AuthenticationSchemes = AuthenticationSchemes.Basic,
                 UnsafeConnectionNtlmAuthentication = false
@@ -36,7 +36,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
                 AdaptedInstance.Close();
         }
 
-        public HttpListener AdaptedInstance
+        public Custom.HttpListener AdaptedInstance
         {
             get;
             private set;
@@ -51,7 +51,7 @@ namespace WebDAVSharp.Server.Adapters.AuthenticationTypes
             int index = WaitHandle.WaitAny(new[] { abortEvent, ar.AsyncWaitHandle });
             if (index != 1)
                 return null;
-            HttpListenerContext context = AdaptedInstance.EndGetContext(ar);
+            Custom.HttpListenerContext context = AdaptedInstance.EndGetContext(ar);
             return new HttpListenerContextAdapter(context);
         }
 

@@ -11,7 +11,7 @@ namespace WebDAVSharp.Server.Adapters
     /// <remarks>
     /// The main purpose of this interface is to facilitate unit-testing.
     /// </remarks>
-    public interface IHttpListenerContext : IAdapter<HttpListenerContext>
+    public interface IHttpListenerContext : IAdapter<Custom.HttpListenerContext>
     {
         /// <summary>
         /// Gets the <see cref="IHttpListenerRequest" /> request adapter.
