@@ -40,10 +40,7 @@ namespace WebDAVSharp.Server
         private readonly Dictionary<string, IWebDavMethodHandler> _methodHandlers;
         internal readonly static ILog _log = LogManager.GetLogger("WebDavServer");
         private readonly object _threadLock = new object();
-        private ManualResetEvent _stopEvent;
-
-        private Thread _thread;
-
+        
         private const string DavHeaderVersion1_2_3 = "1, 2, 3";
         private const string DavHeaderVersion1_2_and1Extended = "1,2,1#extend";
 
@@ -266,11 +263,12 @@ namespace WebDAVSharp.Server
         /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         protected override void Dispose(bool disposing)
         {
-            lock (_threadLock)
-            {
-                if (_thread != null)
-                    Stop();
-            }
+            // no HttpListener anymore...nothing to manage
+            //lock (_threadLock)
+            //{
+            //    if (_thread != null)
+            //        Stop();
+            //}
 
             if (_ownsListener)
                 _listener.Dispose();
@@ -286,25 +284,28 @@ namespace WebDAVSharp.Server
         /// <exception cref="InvalidOperationException">The server is already running.</exception>
         public void Start(String url)
         {
-            Listener.Prefixes.Add(url);
-            EnsureNotDisposed();
-            lock (_threadLock)
-            {
-                if (_thread != null)
-                {
-                    throw new InvalidOperationException(
-                        "This WebDAVServer instance is already running, call to Start is invalid at this point");
-                }
 
-                _stopEvent = new ManualResetEvent(false);
+            throw new NotImplementedException("This library no longer implements an HttpListener to receive requests");
 
-                _thread = new Thread(BackgroundThreadMethod)
-                {
-                    Name = "WebDAVServer.Thread",
-                    Priority = ThreadPriority.Highest
-                };
-                _thread.Start();
-            }
+            //Listener.Prefixes.Add(url);
+            //EnsureNotDisposed();
+            //lock (_threadLock)
+            //{
+            //    if (_thread != null)
+            //    {
+            //        throw new InvalidOperationException(
+            //            "This WebDAVServer instance is already running, call to Start is invalid at this point");
+            //    }
+
+            //    _stopEvent = new ManualResetEvent(false);
+
+            //    _thread = new Thread(BackgroundThreadMethod)
+            //    {
+            //        Name = "WebDAVServer.Thread",
+            //        Priority = ThreadPriority.Highest
+            //    };
+            //    _thread.Start();
+            //}
         }
 
         /// <summary>
@@ -317,65 +318,66 @@ namespace WebDAVSharp.Server
         /// <exception cref="InvalidOperationException">The server is not running.</exception>
         public void Stop()
         {
-            EnsureNotDisposed();
-            lock (_threadLock)
-            {
-                if (_thread == null)
-                {
-                    throw new InvalidOperationException(
-                        "This WebDAVServer instance is not running, call to Stop is invalid at this point");
-                }
+            throw new NotImplementedException("This library no longer implements an HttpListener to receive requests");
 
-                _stopEvent.Set();
-                _thread.Join();
+            //EnsureNotDisposed();
+            //lock (_threadLock)
+            //{
+            //    if (_thread == null)
+            //    {
+            //        throw new InvalidOperationException(
+            //            "This WebDAVServer instance is not running, call to Stop is invalid at this point");
+            //    }
 
-                _stopEvent.Close();
-                _stopEvent = null;
-                _thread = null;
-            }
+            //    _stopEvent.Set();
+            //    _thread.Join();
+
+            //    _stopEvent.Close();
+            //    _stopEvent = null;
+            //    _thread = null;
+            //}
         }
+        
 
-        /// <summary>
-        /// The background thread method.
-        /// </summary>
-        private void BackgroundThreadMethod()
-        {
-            _log.Info("WebDAVServer background thread has started");
-            try
-            {
-                _listener.Start();
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-                while (true)
-                {
-                    _log.DebugFormat("BackgroundThreadMethod poll ms: {0}", sw.ElapsedMilliseconds);
-                    if (_stopEvent.WaitOne(0))
-                        return;
+        // No support for HttpListener, no need for this
+        //private void BackgroundThreadMethod()
+        //{
+        //    _log.Info("WebDAVServer background thread has started");
+        //    try
+        //    {
+        //        _listener.Start();
+        //        Stopwatch sw = new Stopwatch();
+        //        sw.Start();
+        //        while (true)
+        //        {
+        //            _log.DebugFormat("BackgroundThreadMethod poll ms: {0}", sw.ElapsedMilliseconds);
+        //            if (_stopEvent.WaitOne(0))
+        //                return;
 
-                    sw.Reset();
-                    IHttpListenerContext context = Listener.GetContext(_stopEvent);
-                    if (context == null)
-                    {
-                        _log.Debug("Exiting thread");
-                        return;
-                    }
-                    _log.DebugFormat("Queued Context request: {0}", context.Request.HttpMethod);
+        //            sw.Reset();
+        //            IHttpListenerContext context = Listener.GetContext(_stopEvent);
+        //            if (context == null)
+        //            {
+        //                _log.Debug("Exiting thread");
+        //                return;
+        //            }
+        //            _log.DebugFormat("Queued Context request: {0}", context.Request.HttpMethod);
 
-                    ThreadPool.QueueUserWorkItem(ProcessRequest, context);
-                }
-            }
-            catch (Exception ex)
-            {
-                //This error occours if we are not able to queue a request, the whole webdav server
-                //is terminating.
-                _log.Error(String.Format("Web dav ended unexpectedly with error {0}", ex.Message) , ex);
-            }
-            finally
-            {
-                _listener.Stop();
-                _log.Info("WebDAVServer background thread has terminated");
-            }
-        }
+        //            ThreadPool.QueueUserWorkItem(ProcessRequest, context);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //This error occours if we are not able to queue a request, the whole webdav server
+        //        //is terminating.
+        //        _log.Error(String.Format("Web dav ended unexpectedly with error {0}", ex.Message) , ex);
+        //    }
+        //    finally
+        //    {
+        //        _listener.Stop();
+        //        _log.Info("WebDAVServer background thread has terminated");
+        //    }
+        //}
 
         /// <summary>
         /// Called before actual processing is done, useful to do some preliminary 
