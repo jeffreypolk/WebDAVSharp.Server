@@ -602,6 +602,16 @@ namespace WebDAVSharp.Server
             Thread.SetData(Thread.GetNamedDataSlot(HttpUser), Listener.GetIdentity(context));
         }
 
+        /// <summary>
+        /// </summary>
+        public IWebDavMethodHandler GetMethodHandler(string httpMethod)
+        {
+            IWebDavMethodHandler methodHandler;
+            if (!_methodHandlers.TryGetValue(httpMethod, out methodHandler))
+                throw new WebDavMethodNotAllowedException(string.Format(CultureInfo.InvariantCulture, "%s ({0})", httpMethod));
+            return methodHandler;
+        }
+
 
         #endregion
     }
